@@ -5,182 +5,100 @@ on:
     branches:
       - main
       - master
-
   pull_request:
     branches:
       - main
       - master
-
   workflow_dispatch:
 
 jobs:
 
-  # ============================================================
-  # BACKEND CHECK
-  # ============================================================
   backend-check:
     name: Backend Check
     runs-on: ubuntu-latest
 
     steps:
-
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: npm
           cache-dependency-path: backend/package-lock.json
 
-      - name: Install backend dependencies
+      - name: Install Backend
         working-directory: backend
         run: npm ci
 
-      - name: Check backend JavaScript
+      - name: Check Backend
         working-directory: backend
-        shell: bash
         run: |
-          set -e
-
-          echo "===================================="
-          echo "Checking backend JavaScript"
-          echo "===================================="
-
           if [ -f src/server.js ]; then
-            echo "Checking src/server.js"
             node --check src/server.js
-          else
-            echo "src/server.js not found - skipping"
           fi
 
           if [ -f src/arms.js ]; then
-            echo "Checking src/arms.js"
             node --check src/arms.js
-          else
-            echo "src/arms.js not found - skipping"
           fi
 
           if [ -f src/arms-session.js ]; then
-            echo "Checking src/arms-session.js"
             node --check src/arms-session.js
-          else
-            echo "src/arms-session.js not found - skipping"
           fi
 
-          echo "===================================="
-          echo "Backend check completed successfully"
-          echo "===================================="
 
-
-  # ============================================================
-  # ANDROID APK
-  # ============================================================
   android-apk:
     name: Build Android APK
     runs-on: ubuntu-latest
 
     steps:
-
-      # ----------------------------------------------------------
-      # CHECKOUT
-      # ----------------------------------------------------------
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-
-      # ----------------------------------------------------------
-      # JAVA
-      # ----------------------------------------------------------
-      - name: Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
-
-      # ----------------------------------------------------------
-      # FLUTTER
-      # ----------------------------------------------------------
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
+      - name: Flutter Version
+        run: flutter --version
 
-      # ----------------------------------------------------------
-      # FLUTTER VERSION
-      # ----------------------------------------------------------
-      - name: Show Flutter version
+      - name: Check Flutter Project
+        run: test -f pubspec.yaml
+
+      - name: Prepare Android Project
         run: |
-          flutter --version
-          flutter doctor -v
-
-
-      # ----------------------------------------------------------
-      # CHECK PROJECT
-      # ----------------------------------------------------------
-      - name: Check Flutter project
-        run: |
-          echo "===================================="
-          echo "Checking Flutter project"
-          echo "===================================="
-
-          if [ ! -f "pubspec.yaml" ]; then
-            echo "ERROR: pubspec.yaml not found"
-            exit 1
-          fi
-
-          if [ ! -d "lib" ]; then
-            echo "ERROR: lib folder not found"
-            exit 1
-          fi
-
-          echo "Flutter project found."
-
-
-      # ----------------------------------------------------------
-      # REMOVE BROKEN ANDROID PROJECT
-      # ----------------------------------------------------------
-      - name: Remove incomplete Android project
-        run: |
-          echo "===================================="
-          echo "Checking Android project"
-          echo "===================================="
-
-          if [ ! -f "android/gradlew" ]; then
-            echo "Android project is incomplete."
-            echo "Removing incomplete Android folder..."
-
+          if [ ! -f android/gradlew ]; then
             rm -rf android
-
-            echo "Incomplete Android folder removed."
-          else
-            echo "Complete Android project already exists."
-          fi
-
-
-      # ----------------------------------------------------------
-      # GENERATE ANDROID PROJECT
-      # ----------------------------------------------------------
-      - name: Generate Android project
-        run: |
-          echo "===================================="
-          echo "Generating Android project"
-          echo "===================================="
-
-          if [ ! -f "android/gradlew" ]; then
             flutter create --platforms=android --no-pub .
           fi
 
-          echo "Android project generated."
+      - name: Check Android Project
+        run: test -f android/gradlew
 
+      - name: Clean
+        run: flutter clean
 
-      # ----------------------------------------------------------
-      # VERIFY ANDROID PROJECT
-      # ----------------------------------------------------------
-      - name: Verify Android project
-        run: |
-          echo "================================
+      - name: Get Dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --debug
+
+      - name: Check APK
+        run: test -f build/app/outputs/flutter-apk/app-debug.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: hasani-arms-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
