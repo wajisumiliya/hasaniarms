@@ -1,105 +1,296 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:barcode_widget/barcode_widget.dart';
+
 import '../../core/network/api_service.dart';
 
-class HomeScreen extends StatefulWidget{const HomeScreen({super.key});@override State<HomeScreen> createState()=>_HomeScreenState();}
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
 
-class _HomeScreenState extends State<HomeScreen>{
-  final api=ApiService();
-  final member=TextEditingController(text:'000101020212');
-  final password=TextEditingController(text:'123123');
-  Map<String,dynamic>? customer,dashboard;
-  String? error;
-  bool loading=false;
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
 
-  Future<void> logout() async{
-    try { await api.post('/api/customer/logout',{}); } catch (_) { await api.clearSession(); }
-    if (mounted) setState(() { customer=null; dashboard=null; error=null; });
+class _HomeScreenState extends State<HomeScreen> {
+  final ApiService api = ApiService();
+
+  final TextEditingController memberController =
+      TextEditingController(text: '000101020212');
+
+  final TextEditingController passwordController =
+      TextEditingController(text: '123123');
+
+  Map<String, dynamic>? customer;
+  Map<String, dynamic>? dashboard;
+
+  String? errorMessage;
+  bool loading = false;
+  bool obscurePassword = true;
+
+  @override
+  void dispose() {
+    memberController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 
-  Future<void> login() async{
-    setState(()=>loading=true);
-    try{
-      final r=await api.post('/api/customer/login',{'membership':member.text.trim(),'password':password.text});
-      customer=r['customer'];
-      dashboard=await api.get('/api/customer/dashboard');
-      setState(()=>error=null);
-    }catch(e){setState(()=>error=e.toString());}
-    finally{setState(()=>loading=false);}
+  // ============================================================
+  // LOGIN
+  // ============================================================
+
+  Future<void> login() async {
+    if (loading) return;
+
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      loading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final membership = memberController.text.trim();
+      final password = passwordController.text;
+
+      if (membership.isEmpty) {
+        throw Exception('Please enter your membership card number.');
+      }
+
+      if (password.isEmpty) {
+        throw Exception('Please enter your password.');
+      }
+
+      final response = await api.post(
+        '/api/customer/login',
+        {
+          'membership': membership,
+          'password': password,
+        },
+      );
+
+      if (response['customer'] == null) {
+        throw Exception('Login succeeded but customer information was not returned.');
+      }
+
+      final customerData =
+          Map<String, dynamic>.from(response['customer'] as Map);
+
+      Map<String, dynamic> dashboardData = {};
+
+      try {
+        final dashboardResponse =
+            await api.get('/api/customer/dashboard');
+
+        if (dashboardResponse is Map) {
+          dashboardData =
+              Map<String, dynamic>.from(dashboardResponse);
+        }
+      } catch (_) {
+        // Login can still continue if dashboard request fails.
+        dashboardData = {};
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        customer = customerData;
+        dashboard = dashboardData;
+        errorMessage = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        errorMessage = _cleanError(e);
+      });
+    } finally {
+      if (!mounted) return;
+
+      setState(() {
+        loading = false;
+      });
+    }
   }
 
-  @override Widget build(BuildContext context){
-    if(customer==null)return Scaffold(body:Center(child:ConstrainedBox(constraints:BoxConstraints(maxWidth:420),child:Card(margin:const EdgeInsets.all(24),child:Padding(padding:const EdgeInsets.all(28),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
-      const Text('Hasani Customer',style:TextStyle(fontSize:30,fontWeight:FontWeight.w800)),const SizedBox(height:8),
-      const Text('Member Login'),const SizedBox(height:24),
-      TextField(controller:member,decoration:const InputDecoration(labelText:'Membership Card Number')),
-      const SizedBox(height:14),TextField(controller:password,obscureText:true,decoration:const InputDecoration(labelText:'Password')),
-      const SizedBox(height:18),SizedBox(width:double.infinity,child:FilledButton(onPressed:loading?null:login,child:Text(loading?'Signing in…':'Login'))),
-      if(error!=null)Padding(padding:const EdgeInsets.only(top:12),child:Text(error!,style:const TextStyle(color:Colors.red))),
-      const SizedBox(height:14),const Text('Initial test password: 123123',style:TextStyle(color:Colors.grey))
-    ]))))));
+  // ============================================================
+  // LOGOUT
+  // ============================================================
+
+  Future<void> logout() async {
+    try {
+      await api.post(
+        '/api/customer/logout',
+        {},
+      );
+    } catch (_) {
+      // Continue with local logout even if API logout fails.
     }
 
-    final purchases=(dashboard?['purchases'] as List? ?? []);
-    final points=customer!['points'] ?? 0;
-    final spend=purchases.fold<double>(0,(s,x)=>s+((x['total']??0) as num).toDouble());
+    try {
+      await api.clearSession();
+    } catch (_) {}
 
-    return Scaffold(
-      appBar:AppBar(title:const Text('Hasani Customer'),actions:[IconButton(onPressed:logout,icon:const Icon(Icons.logout))]),
-      drawer:Drawer(child:ListView(children:[
-        const DrawerHeader(child:Text('Member Menu',style:TextStyle(fontSize:24,fontWeight:FontWeight.bold))),
-        ListTile(leading:const Icon(Icons.dashboard),title:const Text('Dashboard'),onTap:()=>Navigator.pop(context)),
-        ListTile(leading:const Icon(Icons.receipt_long),title:const Text('Purchase History'),onTap:()=>_showPurchases(context,purchases)),
-        ListTile(leading:const Icon(Icons.stars),title:const Text('Member Points'),onTap:()=>_showPoints(context,points,spend)),
-        const ListTile(leading:Icon(Icons.card_giftcard),title:Text('Rewards')),
-        const ListTile(leading:Icon(Icons.local_offer),title:Text('Offers')),
-        const ListTile(leading:Icon(Icons.shopping_cart),title:Text('Online Store')),
-        const ListTile(leading:Icon(Icons.location_on),title:Text('Locations')),
-        ListTile(leading:const Icon(Icons.logout),title:const Text('Logout'),onTap:logout),
-      ])),
-      body:RefreshIndicator(onRefresh:login,child:ListView(padding:const EdgeInsets.all(18),children:[
-        Text('Welcome, ${customer!['name']}',style:const TextStyle(fontSize:28,fontWeight:FontWeight.w800)),
-        const SizedBox(height:18),
-        _memberCard(customer!),
-        const SizedBox(height:14),
-        Row(children:[
-          Expanded(child:_stat('Points','$points')),
-          const SizedBox(width:10),Expanded(child:_stat('Purchase','RM ${spend.toStringAsFixed(2)}')),
-          const SizedBox(width:10),Expanded(child:_stat('Transactions','${purchases.length}')),
-        ]),
-        const SizedBox(height:18),
-        _section('Quick Access',[
-          _tile(Icons.receipt_long,'Purchase History','View your purchases',()=>_showPurchases(context,purchases)),
-          _tile(Icons.stars,'Member Points','Points earned from purchases',()=>_showPoints(context,points,spend)),
-          _tile(Icons.card_giftcard,'Rewards','Member rewards',null),
-          _tile(Icons.local_offer,'Offers','Special offers',null),
-          _tile(Icons.shopping_cart,'Online Store','Shop online',null),
-          _tile(Icons.location_on,'Locations','Find stores',null),
-        ])
-      ]))
-    );
+    if (!mounted) return;
+
+    setState(() {
+      customer = null;
+      dashboard = null;
+      errorMessage = null;
+    });
   }
 
-  Widget _memberCard(Map c)=>Card(color:const Color(0xff2358d8),child:Padding(padding:const EdgeInsets.all(20),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-    const Text('HASANI MEMBER',style:TextStyle(color:Colors.white70,fontWeight:FontWeight.bold,letterSpacing:1.2)),
-    Text(c['name'],style:const TextStyle(color:Colors.white,fontSize:22,fontWeight:FontWeight.bold)),
-    Text(c['membership'],style:const TextStyle(color:Colors.white70)),
-    const SizedBox(height:16),
-    Wrap(spacing:18,runSpacing:12,crossAxisAlignment:WrapCrossAlignment.end,children:[
-      Container(color:Colors.white,padding:const EdgeInsets.all(7),child:QrImageView(data:'HASANI-MEMBER:${c['membership']}',size:90)),
-      Container(color:Colors.white,padding:const EdgeInsets.all(7),width:210,child:BarcodeWidget(barcode:Barcode.code128(),data:c['membership'],height:60,drawText:true))
-    ])
-  ]));
+  // ============================================================
+  // HELPERS
+  // ============================================================
 
-  Widget _stat(String title,String value)=>Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:const TextStyle(color:Colors.grey)),const SizedBox(height:5),Text(value,style:const TextStyle(fontSize:23,fontWeight:FontWeight.bold))])));
+  String _cleanError(Object error) {
+    final text = error.toString();
 
-  Widget _section(String title,List<Widget> children)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:const TextStyle(fontSize:20,fontWeight:FontWeight.bold)),const SizedBox(height:10),...children]);
+    if (text.startsWith('Exception: ')) {
+      return text.substring(11);
+    }
 
-  Widget _tile(IconData icon,String title,String sub,VoidCallback? onTap)=>Card(child:ListTile(leading:Icon(icon),title:Text(title),subtitle:Text(sub),trailing:const Icon(Icons.chevron_right),onTap:onTap));
+    return text;
+  }
 
-  void _showPurchases(BuildContext c,List purchases)=>showModalBottomSheet(context:c,isScrollControlled:true,builder:(_)=>Padding(padding:const EdgeInsets.all(20),child:ListView(shrinkWrap:true,children:[const Text('Purchase History',style:TextStyle(fontSize:24,fontWeight:FontWeight.bold)),...purchases.map((p)=>ListTile(title:Text('Receipt #${p['receiptNo']}'),subtitle:Text('${p['date']} · +${p['points']} points'),trailing:Text('RM ${(p['total'] as num).toStringAsFixed(2)}')))])));
+  double _toDouble(dynamic value) {
+    if (value == null) return 0;
 
-  void _showPoints(BuildContext c,int points,double spend)=>showModalBottomSheet(context:c,builder:(_)=>Padding(padding:const EdgeInsets.all(20),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('Member Points',style:TextStyle(fontSize:24,fontWeight:FontWeight.bold)),Text('Current points: $points'),Text('Verified purchase value: RM ${spend.toStringAsFixed(2)}'),Text('Points earned: $points'),const SizedBox(height:20)])));
-}
+    if (value is num) {
+      return value.toDouble();
+    }
+
+    return double.tryParse(value.toString()) ?? 0;
+  }
+
+  int _toInt(dynamic value) {
+    if (value == null) return 0;
+
+    if (value is int) {
+      return value;
+    }
+
+    if (value is num) {
+      return value.toInt();
+    }
+
+    return int.tryParse(value.toString()) ?? 0;
+  }
+
+  String _money(dynamic value) {
+    return _toDouble(value).toStringAsFixed(2);
+  }
+
+  List<dynamic> _getPurchases() {
+    final data = dashboard?['purchases'];
+
+    if (data is List) {
+      return data;
+    }
+
+    return <dynamic>[];
+  }
+
+  int _getPoints() {
+    return _toInt(customer?['points']);
+  }
+
+  double _getTotalSpend(List<dynamic> purchases) {
+    double total = 0;
+
+    for (final purchase in purchases) {
+      if (purchase is Map) {
+        total += _toDouble(purchase['total']);
+      }
+    }
+
+    return total;
+  }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
+
+  @override
+  Widget build(BuildContext context) {
+    if (customer == null) {
+      return _buildLoginScreen();
+    }
+
+    return _buildDashboardScreen();
+  }
+
+  // ============================================================
+  // LOGIN SCREEN
+  // ============================================================
+
+  Widget _buildLoginScreen() {
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 430,
+              ),
+              child: Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(28),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Logo / icon
+                      Center(
+                        child: Container(
+                          width: 76,
+                          height: 76,
+                          decoration: BoxDecoration(
+                            color: const Color(0xff2358d8),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 42,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 22),
+
+                      const Center(
+                        child: Text(
+                          'Hasani Customer',
+                          style: TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      const Center(
+                        child: Text(
+                          'Member Login',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      TextField(
+                        controller: memberController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Membership Card Number',
+                          hintText: 'Enter membership number',
+                          prefixIcon: const Icon(Icons.badge_outlined),
+                          border: OutlineInputBorder(
+                            borderRadius: Border
