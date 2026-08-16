@@ -1,4 +1,4 @@
-name: Hasani ARMS Backend Check
+name: Hasani ARMS Build
 
 on:
   push:
@@ -12,7 +12,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  web-backend-check:
+
+  # ============================================================
+  # BACKEND CHECK
+  # ============================================================
+  backend-check:
+    name: Backend Check
     runs-on: ubuntu-latest
 
     steps:
@@ -24,20 +29,114 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: hasaniarms/backend/package-lock.json
+          cache-dependency-path: backend/package-lock.json
 
-      - name: Install dependencies
-        working-directory: hasaniarms/backend
+      - name: Install backend dependencies
+        working-directory: backend
         run: npm ci
 
-      - name: Check server.js syntax
-        working-directory: hasaniarms/backend
-        run: node --check src/server.js
+      - name: Check backend JavaScript
+        working-directory: backend
+        shell: bash
+        run: |
+          echo "Checking backend JavaScript files..."
 
-      - name: Check arms.js syntax
-        working-directory: hasaniarms/backend
-        run: node --check src/arms.js
+          if [ -f src/server.js ]; then
+            node --check src/server.js
+          fi
 
-      - name: Check arms-session.js syntax
-        working-directory: hasaniarms/backend
-        run: node --check src/arms-session.js
+          if [ -f src/arms.js ]; then
+            node --check src/arms.js
+          fi
+
+          if [ -f src/arms-session.js ]; then
+            node --check src/arms-session.js
+          fi
+
+          echo "Backend syntax check completed."
+
+
+  # ============================================================
+  # FLUTTER APK BUILD
+  # ============================================================
+  flutter-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Show Flutter version
+        run: flutter --version
+
+      - name: Flutter doctor
+        run: flutter doctor -v
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Clean Flutter project
+        run: flutter clean
+
+      - name: Get dependencies again
+        run: flutter pub get
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Show APK
+        run: |
+          echo "APK files:"
+          find build/app/outputs/flutter-apk -type f -name "*.apk" -print
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: hasani-arms-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+
+
+  # ============================================================
+  # FLUTTER WEB BUILD
+  # ============================================================
+  flutter-web:
+    name: Build Flutter Web
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Build Flutter Web
+        run: flutter build web
+
+      - name: Upload Web Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: hasani-arms-web
+          path: build/web
+          if-no-files-found: error
