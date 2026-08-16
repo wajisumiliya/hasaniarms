@@ -17,11 +17,26 @@ const app = express();
 
 /*
 |--------------------------------------------------------------------------
+| TRUST RENDER REVERSE PROXY
+|--------------------------------------------------------------------------
+|
+| Render runs Node/Express behind a reverse proxy.
+|
+| This is REQUIRED when using secure Express session cookies on Render.
+|
+*/
+
+app.set("trust proxy", 1);
+
+/*
+|--------------------------------------------------------------------------
 | PORT
 |--------------------------------------------------------------------------
 */
 
-const port = Number(process.env.PORT || 5000);
+const port = Number(
+  process.env.PORT || 5000
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -29,10 +44,17 @@ const port = Number(process.env.PORT || 5000);
 |--------------------------------------------------------------------------
 */
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __filename =
+  fileURLToPath(import.meta.url);
 
-const webPath = path.resolve(__dirname, "../../web");
+const __dirname =
+  path.dirname(__filename);
+
+const webPath =
+  path.resolve(
+    __dirname,
+    "../../web"
+  );
 
 /*
 |--------------------------------------------------------------------------
@@ -45,16 +67,17 @@ const cookieName =
   "hasani_customer_sid";
 
 const CUSTOMER_PASSWORD =
-  process.env.CUSTOMER_PASSWORD || "123123";
+  process.env.CUSTOMER_PASSWORD ||
+  "123123";
+
+const SESSION_SECRET =
+  process.env.CUSTOMER_SESSION_SECRET ||
+  "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET";
 
 /*
 |--------------------------------------------------------------------------
 | CORS
 |--------------------------------------------------------------------------
-|
-| The Android application does not depend on browser CORS.
-| We still enable credentials for the web frontend.
-|
 */
 
 app.use(
@@ -78,6 +101,32 @@ app.use(
 
 /*
 |--------------------------------------------------------------------------
+| NO-CACHE API RESPONSES
+|--------------------------------------------------------------------------
+|
+| Prevent browsers/proxies from caching login/session responses.
+|
+*/
+
+app.use(
+  "/api",
+  (_req, res, next) => {
+    res.setHeader(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, private"
+    );
+
+    res.setHeader(
+      "Pragma",
+      "no-cache"
+    );
+
+    next();
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
 | SESSION
 |--------------------------------------------------------------------------
 */
@@ -86,9 +135,7 @@ app.use(
   session({
     name: cookieName,
 
-    secret:
-      process.env.CUSTOMER_SESSION_SECRET ||
-      "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET",
+    secret: SESSION_SECRET,
 
     resave: false,
 
@@ -99,11 +146,22 @@ app.use(
     cookie: {
       httpOnly: true,
 
+      /*
+       * Flutter sends the Cookie header directly.
+       * "lax" is safe for the web frontend too.
+       */
       sameSite:
-        process.env.COOKIE_SAMESITE || "lax",
+        process.env.COOKIE_SAMESITE ||
+        "lax",
 
+      /*
+       * Render uses HTTPS in production.
+       * trust proxy above allows Express to correctly
+       * recognize the HTTPS connection.
+       */
       secure:
-        process.env.NODE_ENV === "production",
+        process.env.NODE_ENV ===
+        "production",
 
       path: "/",
 
@@ -121,15 +179,18 @@ app.use(
 |--------------------------------------------------------------------------
 */
 
-app.use((req, _res, next) => {
-  console.log(
-    `[${new Date().toISOString()}] ` +
-      `${req.method} ${req.originalUrl} ` +
-      `from ${req.headers.origin || "no-origin"}`
-  );
+app.use(
+  (req, _res, next) => {
+    console.log(
+      `[${new Date().toISOString()}] ` +
+        `${req.method} ${req.originalUrl} ` +
+        `origin=${req.headers.origin || "none"} ` +
+        `user-agent=${req.headers["user-agent"] || "unknown"}`
+    );
 
-  next();
-});
+    next();
+  }
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -137,10 +198,15 @@ app.use((req, _res, next) => {
 |--------------------------------------------------------------------------
 */
 
-const requireCustomer = (req, res, next) => {
+const requireCustomer = (
+  req,
+  res,
+  next
+) => {
   if (!req.session?.customer) {
     return res.status(401).json({
       ok: false,
+
       error:
         "Customer session expired. Please log in again."
     });
@@ -150,30 +216,38 @@ const requireCustomer = (req, res, next) => {
 };
 
 const saveSession = (req) =>
-  new Promise((resolve, reject) => {
-    req.session.save((error) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve();
-      }
-    });
-  });
+  new Promise(
+    (resolve, reject) => {
+      req.session.save(
+        (error) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve();
+          }
+        }
+      );
+    }
+  );
 
 const destroySession = (req) =>
-  new Promise((resolve, reject) => {
-    if (!req.session) {
-      return resolve();
-    }
-
-    req.session.destroy((error) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve();
+  new Promise(
+    (resolve, reject) => {
+      if (!req.session) {
+        return resolve();
       }
-    });
-  });
+
+      req.session.destroy(
+        (error) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve();
+          }
+        }
+      );
+    }
+  );
 
 /*
 |--------------------------------------------------------------------------
@@ -182,11 +256,14 @@ const destroySession = (req) =>
 */
 
 function cleanDisplayName(value) {
-  let name = String(value || "").trim();
+  let name =
+    String(value || "").trim();
 
   if (
     !name ||
-    /^(?:arms\s+customer|customer|member)$/i.test(name)
+    /^(?:arms\s+customer|customer|member)$/i.test(
+      name
+    )
   ) {
     return null;
   }
@@ -196,10 +273,22 @@ function cleanDisplayName(value) {
       /^\s*(?:mr|mrs|ms|miss|dr)\.?\s*/i,
       ""
     )
-    .replace(/^\s*(?:kb|kg)\s*:\s*/i, "")
-    .replace(/^\s*(?:kb|kg)\s+/i, "")
-    .replace(/^\s*:\s*/, "")
-    .replace(/\s+/g, " ")
+    .replace(
+      /^\s*(?:kb|kg)\s*:\s*/i,
+      ""
+    )
+    .replace(
+      /^\s*(?:kb|kg)\s+/i,
+      ""
+    )
+    .replace(
+      /^\s*:\s*/,
+      ""
+    )
+    .replace(
+      /\s+/g,
+      " "
+    )
     .trim();
 
   return name || null;
@@ -207,7 +296,8 @@ function cleanDisplayName(value) {
 
 function firstRealName(...values) {
   for (const value of values) {
-    const cleaned = cleanDisplayName(value);
+    const cleaned =
+      cleanDisplayName(value);
 
     if (cleaned) {
       return cleaned;
@@ -219,7 +309,8 @@ function firstRealName(...values) {
 
 function firstValue(...values) {
   for (const value of values) {
-    const text = String(value || "").trim();
+    const text =
+      String(value || "").trim();
 
     if (text) {
       return text;
@@ -229,7 +320,10 @@ function firstValue(...values) {
   return null;
 }
 
-function personal(live, member) {
+function personal(
+  live,
+  member
+) {
   member = member || {};
 
   const arms =
@@ -400,37 +494,51 @@ function personal(live, member) {
 |--------------------------------------------------------------------------
 */
 
-app.get("/health", (_req, res) => {
-  res.json({
-    ok: true,
+app.get(
+  "/health",
+  (_req, res) => {
+    res.json({
+      ok: true,
 
-    service:
-      "hasani-arms-customer-api",
+      service:
+        "hasani-arms-customer-api",
 
-    version:
-      "7.4.0",
+      version:
+        "7.4.1",
 
-    port,
+      port,
 
-    environment:
-      process.env.NODE_ENV || "development",
+      environment:
+        process.env.NODE_ENV ||
+        "development",
 
-    armsConfigured:
-      Boolean(
-        process.env.ARMS_USERNAME &&
-        process.env.ARMS_PASSWORD
-      ),
+      armsConfigured:
+        Boolean(
+          process.env.ARMS_USERNAME &&
+          process.env.ARMS_PASSWORD
+        ),
 
-    armsBaseUrl:
-      process.env.ARMS_BASE_URL ||
-      "https://hasani.arms.com.my",
+      armsBaseUrl:
+        process.env.ARMS_BASE_URL ||
+        "https://hasani.arms.com.my",
 
-    historyConfigured:
-      Boolean(
-        process.env.ARMS_HISTORY_URL_TEMPLATE
-      )
-  });
-});
+      historyConfigured:
+        Boolean(
+          process.env.ARMS_HISTORY_URL_TEMPLATE
+        ),
+
+      sessionConfigured:
+        Boolean(
+          SESSION_SECRET &&
+          SESSION_SECRET !==
+            "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET"
+        ),
+
+      trustProxy:
+        true
+    });
+  }
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -438,20 +546,61 @@ app.get("/health", (_req, res) => {
 |--------------------------------------------------------------------------
 */
 
-app.get("/api/test", (_req, res) => {
-  res.json({
-    ok: true,
+app.get(
+  "/api/test",
+  (_req, res) => {
+    res.json({
+      ok: true,
 
-    service:
-      "hasani-arms-customer-api",
+      service:
+        "hasani-arms-customer-api",
 
-    version:
-      "7.4.0",
+      version:
+        "7.4.1",
 
-    message:
-      "Hasani ARMS backend is reachable."
-  });
-});
+      message:
+        "Hasani ARMS backend is reachable."
+    });
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| SESSION DEBUG
+|--------------------------------------------------------------------------
+|
+| This endpoint does NOT expose the session ID.
+| It only tells us whether Express sees a customer session.
+|
+*/
+
+app.get(
+  "/api/customer/session-status",
+  (req, res) => {
+    res.json({
+      ok: true,
+
+      authenticated:
+        Boolean(
+          req.session?.customer
+        ),
+
+      sessionExists:
+        Boolean(req.session),
+
+      customer:
+        req.session?.customer
+          ? {
+              membership:
+                req.session.customer.membership,
+
+              name:
+                req.session.customer.name
+            }
+          : null
+    });
+  }
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -464,15 +613,20 @@ app.post(
   async (req, res) => {
     const membership =
       String(
-        req.body?.membership || ""
+        req.body?.membership ||
+          ""
       ).trim();
 
     const password =
       String(
-        req.body?.password || ""
+        req.body?.password ||
+          ""
       );
 
-    if (!membership || !password) {
+    if (
+      !membership ||
+      !password
+    ) {
       return res.status(400).json({
         ok: false,
 
@@ -481,9 +635,35 @@ app.post(
       });
     }
 
-    if (password !== CUSTOMER_PASSWORD) {
+    /*
+     * New login:
+     *
+     * Destroy any previous customer session first.
+     */
+    try {
+      if (req.session) {
+        await destroySession(req);
+      }
+    } catch (error) {
+      console.error(
+        "[CUSTOMER LOGIN] Unable to destroy old session:",
+        error
+      );
+    }
+
+    /*
+     * express-session creates a new session
+     * for this request after the old one is destroyed.
+     */
+
+    if (
+      password !==
+      CUSTOMER_PASSWORD
+    ) {
       return res.status(401).json({
         ok: false,
+
+        authenticated: false,
 
         error:
           "Invalid membership number or password."
@@ -504,34 +684,45 @@ app.post(
       const verifiedName =
         firstRealName(
           history?.name,
-          history?.personalInformation?.fullName,
-          history?.personalInformation?.name,
+          history
+            ?.personalInformation
+            ?.fullName,
+          history
+            ?.personalInformation
+            ?.name,
           history?.member?.fullName,
           history?.member?.full_name,
           history?.member?.name,
-          live?.personalInformation?.fullName,
-          live?.personalInformation?.name,
+          live
+            ?.personalInformation
+            ?.fullName,
+          live
+            ?.personalInformation
+            ?.name,
           live?.name
         );
 
       const liveExpiry =
         String(
-          live?.expiryDate || ""
+          live?.expiryDate ||
+            ""
         ).trim();
 
       const historyExpiry =
         String(
           history?.expiryDate ||
-          history?.member?.expiryDate ||
-          history?.member?.expiry_date ||
-          ""
+            history?.member?.expiryDate ||
+            history?.member?.expiry_date ||
+            ""
         ).trim();
 
       const verifiedExpiry =
         firstValue(
           historyExpiry,
           liveExpiry,
-          history?.personalInformation?.expiryDate,
+          history
+            ?.personalInformation
+            ?.expiryDate,
           history?.member?.expiryDate,
           history?.member?.expiry_date
         );
@@ -581,8 +772,8 @@ app.post(
         pointsBalance:
           Number(
             live.pointsBalance ??
-            live.points ??
-            0
+              live.points ??
+              0
           ),
 
         pointsEarned:
@@ -597,11 +788,19 @@ app.post(
         issueBranch:
           firstValue(
             history?.issueBranch,
-            history?.personalInformation?.issueBranch,
-            history?.personalInformation?.applyBranch,
-            live.issueBranch,
-            live.personalInformation?.issueBranch,
-            live.personalInformation?.applyBranch
+            history
+              ?.personalInformation
+              ?.issueBranch,
+            history
+              ?.personalInformation
+              ?.applyBranch,
+            live?.issueBranch,
+            live
+              ?.personalInformation
+              ?.issueBranch,
+            live
+              ?.personalInformation
+              ?.applyBranch
           ),
 
         issueDate:
@@ -630,7 +829,30 @@ app.post(
       req.session.armsVerifiedAt =
         Date.now();
 
+      /*
+       * VERY IMPORTANT:
+       *
+       * Save the session before returning
+       * the login response.
+       *
+       * Express will then send Set-Cookie.
+       */
+
       await saveSession(req);
+
+      console.log(
+        "[CUSTOMER LOGIN] Session saved successfully."
+      );
+
+      console.log(
+        "[CUSTOMER LOGIN] Membership:",
+        req.session.customer.membership
+      );
+
+      console.log(
+        "[CUSTOMER LOGIN] Session ID exists:",
+        Boolean(req.sessionID)
+      );
 
       return res.json({
         ok: true,
@@ -646,7 +868,8 @@ app.post(
           historyConfigured:
             Boolean(
               live.historyConfigured ??
-              process.env.ARMS_HISTORY_URL_TEMPLATE
+                process.env
+                  .ARMS_HISTORY_URL_TEMPLATE
             )
         }
       });
@@ -873,17 +1096,21 @@ app.post(
   async (req, res) => {
     try {
       const requestedPurchase =
-        req.body?.purchase || null;
+        req.body?.purchase ||
+        null;
 
       let transaction =
         req.body?.transaction ||
-        requestedPurchase?.transaction_detail ||
-        requestedPurchase?.transactionDetail ||
+        requestedPurchase
+          ?.transaction_detail ||
+        requestedPurchase
+          ?.transactionDetail ||
         null;
 
       const existingDetail =
         requestedPurchase?.detail ||
-        requestedPurchase?.transactionDetailData ||
+        requestedPurchase
+          ?.transactionDetailData ||
         null;
 
       if (
@@ -905,7 +1132,8 @@ app.post(
 
       if (!transaction) {
         const membership =
-          req.session.customer.membership;
+          req.session.customer
+            .membership;
 
         const history =
           await getMembershipHistory(
@@ -921,23 +1149,28 @@ app.post(
 
         const requestedReceipt =
           String(
-            requestedPurchase?.receiptNo ??
-            requestedPurchase?.receipt_no ??
-            ""
+            requestedPurchase
+              ?.receiptNo ??
+              requestedPurchase
+                ?.receipt_no ??
+              ""
           ).trim();
 
         const requestedReference =
           String(
-            requestedPurchase?.receiptRefNo ??
-            requestedPurchase?.receipt_ref_no ??
-            ""
+            requestedPurchase
+              ?.receiptRefNo ??
+              requestedPurchase
+                ?.receipt_ref_no ??
+              ""
           ).trim();
 
         const requestedDate =
           String(
             requestedPurchase?.date ??
-            requestedPurchase?.transaction_time ??
-            ""
+              requestedPurchase
+                ?.transaction_time ??
+              ""
           ).trim();
 
         const exact =
@@ -946,47 +1179,51 @@ app.post(
               const receipt =
                 String(
                   item?.receiptNo ??
-                  item?.receipt_no ??
-                  ""
+                    item?.receipt_no ??
+                    ""
                 ).trim();
 
               const reference =
                 String(
                   item?.receiptRefNo ??
-                  item?.receipt_ref_no ??
-                  ""
+                    item?.receipt_ref_no ??
+                    ""
                 ).trim();
 
               const date =
                 String(
                   item?.date ??
-                  item?.transaction_time ??
-                  ""
+                    item?.transaction_time ??
+                    ""
                 ).trim();
 
               if (
                 requestedReceipt &&
-                receipt === requestedReceipt
+                receipt ===
+                  requestedReceipt
               ) {
                 return true;
               }
 
               if (
                 requestedReference &&
-                reference === requestedReference
+                reference ===
+                  requestedReference
               ) {
                 return true;
               }
 
               return Boolean(
                 requestedDate &&
-                date === requestedDate
+                date ===
+                  requestedDate
               );
             }
           );
 
         if (
-          exact?.detail?.items?.length
+          exact?.detail?.items
+            ?.length
         ) {
           return res.json({
             ok: true,
@@ -999,8 +1236,10 @@ app.post(
         }
 
         transaction =
-          exact?.transaction_detail ||
-          exact?.transactionDetail ||
+          exact
+            ?.transaction_detail ||
+          exact
+            ?.transactionDetail ||
           null;
       }
 
@@ -1016,10 +1255,12 @@ app.post(
         required.filter(
           function (field) {
             return (
-              transaction?.[field] ===
-                undefined ||
-              transaction?.[field] ===
-                null ||
+              transaction?.[
+                field
+              ] === undefined ||
+              transaction?.[
+                field
+              ] === null ||
               String(
                 transaction[field]
               ).trim() === ""
@@ -1086,7 +1327,8 @@ app.get(
   async (req, res) => {
     try {
       const membership =
-        req.session.customer.membership;
+        req.session.customer
+          .membership;
 
       const qr =
         await QRCode.toDataURL(
@@ -1154,8 +1396,11 @@ app.post(
   async (req, res) => {
     try {
       await destroySession(req);
-    } catch {
-      // Session may already be destroyed.
+    } catch (error) {
+      console.error(
+        "[LOGOUT] Session destroy error:",
+        error
+      );
     }
 
     res.clearCookie(
@@ -1251,7 +1496,7 @@ app.listen(
     );
 
     console.log(
-      " Hasani ARMS Customer API 7.4.0"
+      " Hasani ARMS Customer API 7.4.1"
     );
 
     console.log(
@@ -1270,11 +1515,23 @@ app.listen(
     );
 
     console.log(
+      " Trust Proxy: ENABLED"
+    );
+
+    console.log(
+      ` Session Cookie: ${cookieName}`
+    );
+
+    console.log(
       " Health: /health"
     );
 
     console.log(
       " Test: /api/test"
+    );
+
+    console.log(
+      " Session: /api/customer/session-status"
     );
 
     console.log(
