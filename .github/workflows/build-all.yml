@@ -51,39 +51,45 @@ jobs:
 
 
       # ----------------------------------------------------------
-      # CHECK SERVER.JS
+      # CHECK server.js
       # ----------------------------------------------------------
       - name: Check server.js
         working-directory: backend
         run: |
           if [ -f src/server.js ]; then
+            echo "Checking src/server.js..."
             node --check src/server.js
+            echo "server.js OK"
           else
             echo "src/server.js not found - skipping"
           fi
 
 
       # ----------------------------------------------------------
-      # CHECK ARMS.JS
+      # CHECK arms.js
       # ----------------------------------------------------------
       - name: Check arms.js
         working-directory: backend
         run: |
           if [ -f src/arms.js ]; then
+            echo "Checking src/arms.js..."
             node --check src/arms.js
+            echo "arms.js OK"
           else
             echo "src/arms.js not found - skipping"
           fi
 
 
       # ----------------------------------------------------------
-      # CHECK ARMS-SESSION.JS
+      # CHECK arms-session.js
       # ----------------------------------------------------------
       - name: Check arms-session.js
         working-directory: backend
         run: |
           if [ -f src/arms-session.js ]; then
+            echo "Checking src/arms-session.js..."
             node --check src/arms-session.js
+            echo "arms-session.js OK"
           else
             echo "src/arms-session.js not found - skipping"
           fi
@@ -113,30 +119,42 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
 
 
       # ----------------------------------------------------------
       # FLUTTER
+      #
+      # IMPORTANT:
+      # Cache is intentionally disabled.
+      #
+      # Your previous build failed because the downloaded Flutter
+      # archive was corrupted / incomplete.
       # ----------------------------------------------------------
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.35.7'
           channel: stable
-          cache: true
+          cache: false
 
 
       # ----------------------------------------------------------
-      # SHOW FLUTTER VERSION
+      # SHOW VERSIONS
       # ----------------------------------------------------------
-      - name: Flutter version
-        run: flutter --version
+      - name: Show Flutter version
+        run: |
+          flutter --version
 
 
-      # ----------------------------------------------------------
-      # SHOW JAVA VERSION
-      # ----------------------------------------------------------
-      - name: Java version
-        run: java -version
+      - name: Show Dart version
+        run: |
+          dart --version
+
+
+      - name: Show Java version
+        run: |
+          java -version
 
 
       # ----------------------------------------------------------
@@ -144,32 +162,31 @@ jobs:
       # ----------------------------------------------------------
       - name: Verify Flutter project
         run: |
+          echo "Checking Flutter project..."
+
           test -f pubspec.yaml
           test -d lib
 
-          echo "========================================"
-          echo "Flutter project found."
           echo "pubspec.yaml found."
-          echo "lib folder found."
-          echo "========================================"
+          echo "lib directory found."
+          echo "Flutter project verified."
 
 
       # ----------------------------------------------------------
       # PREPARE ANDROID PROJECT
       #
-      # The repository currently does not contain an Android
-      # platform folder.
+      # Your GitHub repository currently does NOT contain the
+      # Android platform folder.
       #
-      # Therefore GitHub Actions generates it automatically.
+      # Flutter will generate it here automatically.
       # ----------------------------------------------------------
       - name: Prepare Android project
         run: |
+
           if [ ! -f android/gradlew ]; then
 
-            echo "========================================"
-            echo "Android project is incomplete."
+            echo "Android project not found."
             echo "Generating Android platform..."
-            echo "========================================"
 
             rm -rf android
 
@@ -178,49 +195,14 @@ jobs:
               --no-pub \
               .
 
-            echo "========================================"
-            echo "Android project generated."
-            echo "========================================"
+            echo "Android platform generated successfully."
 
           else
 
-            echo "========================================"
-            echo "Android Gradle wrapper already exists."
+            echo "Existing Android project found."
             echo "Using existing Android project."
-            echo "========================================"
 
           fi
-
-
-      # ----------------------------------------------------------
-      # CONFIGURE ANDROID INTERNET PERMISSION
-      #
-      # The customer APK must connect to the Render backend.
-      # ----------------------------------------------------------
-      - name: Configure Android Internet permission
-        run: |
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-
-          echo "Checking AndroidManifest.xml..."
-
-          if [ ! -f "$MANIFEST" ]; then
-            echo "ERROR: AndroidManifest.xml not found."
-            exit 1
-          fi
-
-          if grep -q 'android.permission.INTERNET' "$MANIFEST"; then
-
-            echo "Internet permission already exists."
-
-          else
-
-            sed -i '/<manifest /a\    <uses-permission android:name="android.permission.INTERNET"/>' "$MANIFEST"
-
-            echo "Internet permission added."
-
-          fi
-
-          echo "Android manifest configured."
 
 
       # ----------------------------------------------------------
@@ -229,43 +211,59 @@ jobs:
       - name: Verify Android project
         run: |
 
-          test -d android
+          echo "Verifying Android project..."
 
+          test -d android
+          test -d android/app
           test -f android/gradlew
 
-          test -f android/settings.gradle || \
-          test -f android/settings.gradle.kts
+          if [ -f android/settings.gradle ]; then
+            echo "settings.gradle found."
+          elif [ -f android/settings.gradle.kts ]; then
+            echo "settings.gradle.kts found."
+          else
+            echo "ERROR: Android settings file not found."
+            exit 1
+          fi
 
-          test -d android/app
-
-          test -f android/app/src/main/AndroidManifest.xml
-
-          echo "========================================"
           echo "Android project verified."
-          echo "AndroidManifest.xml verified."
-          echo "========================================"
 
 
       # ----------------------------------------------------------
-      # SHOW ANDROID MANIFEST
+      # ADD INTERNET PERMISSION
       # ----------------------------------------------------------
-      - name: Verify Internet permission
+      - name: Configure Android Internet permission
         run: |
 
           MANIFEST="android/app/src/main/AndroidManifest.xml"
 
+          echo "Checking AndroidManifest.xml..."
+
+          if [ ! -f "$MANIFEST" ]; then
+            echo "ERROR: AndroidManifest.xml was not generated."
+            exit 1
+          fi
+
+          echo "AndroidManifest.xml found."
+
+
           if grep -q 'android.permission.INTERNET' "$MANIFEST"; then
 
-            echo "========================================"
-            echo "INTERNET PERMISSION FOUND"
-            echo "========================================"
+            echo "Internet permission already exists."
 
           else
 
-            echo "ERROR: INTERNET permission is missing."
-            exit 1
+            echo "Adding Internet permission..."
+
+            sed -i '/<manifest /a\    <uses-permission android:name="android.permission.INTERNET"/>' "$MANIFEST"
+
+            echo "Internet permission added."
 
           fi
+
+
+          echo "Final Android manifest:"
+          cat "$MANIFEST"
 
 
       # ----------------------------------------------------------
@@ -285,7 +283,7 @@ jobs:
 
 
       # ----------------------------------------------------------
-      # ANALYZE FLUTTER APPLICATION
+      # ANALYZE APPLICATION
       # ----------------------------------------------------------
       - name: Analyze Flutter application
         run: |
@@ -295,19 +293,19 @@ jobs:
       # ----------------------------------------------------------
       # BUILD DEBUG APK
       #
-      # IMPORTANT:
-      #
-      # The APK connects to:
+      # The APK connects to your live Render backend:
       #
       # https://hasaniarms.onrender.com
       #
-      # NOT localhost.
-      # NOT 192.168.x.x.
+      # DO NOT use localhost.
+      # DO NOT use 192.168.x.x.
       # ----------------------------------------------------------
       - name: Build Debug APK
         run: |
 
           set -o pipefail
+
+          echo "Building Hasani ARMS APK..."
 
           flutter build apk \
             --debug \
@@ -322,17 +320,23 @@ jobs:
       - name: Verify APK
         run: |
 
-          test -f build/app/outputs/flutter-apk/app-debug.apk
+          APK="build/app/outputs/flutter-apk/app-debug.apk"
 
+          if [ ! -f "$APK" ]; then
+            echo "ERROR: APK was not created."
+            exit 1
+          fi
+
+          echo ""
           echo "========================================"
-          echo "APK SUCCESSFULLY CREATED"
+          echo "APK BUILD SUCCESSFUL"
           echo "========================================"
 
-          ls -lh build/app/outputs/flutter-apk/app-debug.apk
+          ls -lh "$APK"
 
 
       # ----------------------------------------------------------
-      # UPLOAD DEBUG APK
+      # UPLOAD APK
       # ----------------------------------------------------------
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -343,17 +347,22 @@ jobs:
 
 
       # ----------------------------------------------------------
-      # SHOW BUILD LOG IF BUILD FAILS
+      # SHOW BUILD LOG ON FAILURE
       # ----------------------------------------------------------
       - name: Show build log on failure
         if: failure()
         run: |
 
+          echo ""
+          echo "========================================"
+          echo "BUILD FAILED"
+          echo "========================================"
+
           if [ -f build.log ]; then
 
-            echo "========================================"
+            echo ""
             echo "LAST 250 LINES OF BUILD LOG"
-            echo "========================================"
+            echo "----------------------------------------"
 
             tail -n 250 build.log
 
