@@ -1,25 +1,43 @@
+name: Hasani ARMS Backend Check
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
   web-backend-check:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-          cache-dependency-path: 'hasaniarms/backend/package-lock.json'
-        # Fixed: Indented and placed inside the step it belongs to
-        env:
-          NODE_WORKSPACE: 'hasaniarms/backend'
+          cache: npm
+          cache-dependency-path: hasaniarms/backend/package-lock.json
 
       - name: Install dependencies
+        working-directory: hasaniarms/backend
         run: npm ci
-        working-directory: hasaniarms/backend
 
-      - name: Check syntax
-        run: |
-          node --check src/server.js
-          node --check src/arms.js
-          node --check src/arms-session.js
+      - name: Check server.js syntax
         working-directory: hasaniarms/backend
+        run: node --check src/server.js
+
+      - name: Check arms.js syntax
+        working-directory: hasaniarms/backend
+        run: node --check src/arms.js
+
+      - name: Check arms-session.js syntax
+        working-directory: hasaniarms/backend
+        run: node --check src/arms-session.js
