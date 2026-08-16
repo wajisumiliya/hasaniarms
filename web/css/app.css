@@ -1,0 +1,3988 @@
+/* ============================================================
+   HASANI BOOKS CUSTOMER PORTAL
+   ============================================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+
+body {
+  font-family:
+    Inter,
+    "Segoe UI",
+    Arial,
+    sans-serif;
+
+  background: #f5f7fb;
+
+  color: #172033;
+}
+
+
+button,
+input {
+  font: inherit;
+}
+
+
+button {
+  cursor: pointer;
+}
+
+
+.hidden {
+  display: none !important;
+}
+
+
+
+/* ============================================================
+   LOGIN
+   ============================================================ */
+
+.auth-shell {
+  min-height: 100vh;
+
+  display: grid;
+  place-items: center;
+
+  padding: 24px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #eef3ff,
+      #f7f9fc
+    );
+}
+
+
+.auth-card {
+  width: min(430px, 100%);
+
+  background: #fff;
+
+  border-radius: 22px;
+
+  padding: 38px;
+
+  box-shadow:
+    0 20px 60px
+    rgba(23,32,51,.10);
+}
+
+
+.login-logo {
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  margin-bottom: 25px;
+}
+
+
+.login-logo img {
+  display: block;
+
+  width: min(100%, 360px);
+
+  height: auto;
+
+  max-height: 90px;
+
+  object-fit: contain;
+}
+
+
+.auth-card h1 {
+  margin: 0 0 6px;
+
+  font-size: 30px;
+}
+
+
+.auth-card p {
+  margin: 0 0 26px;
+
+  color: #718096;
+}
+
+
+.auth-card label {
+  display: block;
+
+  font-size: 14px;
+
+  font-weight: 700;
+
+  margin: 16px 0;
+}
+
+
+.auth-card input {
+  width: 100%;
+
+  margin-top: 8px;
+
+  border:
+    1px solid
+    #d7ddea;
+
+  border-radius: 11px;
+
+  padding: 13px;
+}
+
+
+.primary {
+  background: #2358d8;
+
+  color: #fff;
+
+  border: 0;
+
+  border-radius: 10px;
+
+  padding: 12px 18px;
+
+  font-weight: 700;
+}
+
+
+.primary:hover {
+  background: #1d4fc8;
+}
+
+
+.full {
+  width: 100%;
+
+  margin-top: 8px;
+}
+
+
+.message {
+  margin-top: 15px;
+
+  color: #c53030;
+}
+
+
+
+/* ============================================================
+   APP
+   ============================================================ */
+
+.app-shell {
+  min-height: 100vh;
+
+  display: flex;
+}
+
+
+.sidebar {
+  width: 255px;
+
+  background: #101a30;
+
+  color: #dbe4fb;
+
+  padding: 22px 16px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  position: fixed;
+
+  inset: 0 auto 0 0;
+
+  z-index: 20;
+}
+
+
+.main-area {
+  margin-left: 255px;
+
+  flex: 1;
+
+  min-width: 0;
+}
+
+
+
+/* ============================================================
+   SIDEBAR LOGO
+   ============================================================ */
+
+.side-brand {
+  display: flex;
+
+  align-items: center;
+
+  padding:
+    5px 10px 24px;
+}
+
+
+.sidebar-logo {
+  display: block;
+
+  width: 190px;
+
+  max-width: 100%;
+
+  height: auto;
+
+  object-fit: contain;
+
+  object-position: left center;
+}
+
+
+
+/* ============================================================
+   CUSTOMER SIDEBAR
+   ============================================================ */
+
+.side-user {
+  display: flex;
+
+  gap: 10px;
+
+  align-items: center;
+
+  padding: 13px 10px;
+
+  background:
+    rgba(255,255,255,.05);
+
+  border-radius: 14px;
+
+  margin-bottom: 20px;
+}
+
+
+.side-user b {
+  display: block;
+
+  line-height: 1.25;
+}
+
+
+.side-user small {
+  display: block;
+
+  color: #93a4c6;
+
+  margin-top: 3px;
+}
+
+
+.avatar {
+  width: 38px;
+
+  height: 38px;
+
+  flex: 0 0 38px;
+
+  border-radius: 50%;
+
+  background: #2d66e2;
+
+  color: #fff;
+
+  display: grid;
+
+  place-items: center;
+
+  font-weight: 800;
+}
+
+
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+
+.sidebar nav {
+  display: grid;
+
+  gap: 5px;
+}
+
+
+.nav-item {
+  border: 0;
+
+  background: transparent;
+
+  color: #aebbd6;
+
+  text-align: left;
+
+  padding: 12px;
+
+  border-radius: 10px;
+
+  font-weight: 600;
+
+  transition:
+    background .2s ease,
+    color .2s ease;
+}
+
+
+.nav-item:hover,
+.nav-item.active {
+  background: #2358d8;
+
+  color: #fff;
+}
+
+
+.logout {
+  margin-top: auto;
+
+  border: 0;
+
+  background:
+    rgba(255,255,255,.05);
+
+  color: #dbe4fb;
+
+  padding: 12px;
+
+  border-radius: 10px;
+
+  text-align: left;
+}
+
+
+.logout:hover {
+  background:
+    rgba(255,255,255,.10);
+}
+
+
+
+/* ============================================================
+   TOP BAR
+   ============================================================ */
+
+.topbar {
+  height: 78px;
+
+  background: #fff;
+
+  border-bottom:
+    1px solid
+    #e7eaf1;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  padding: 0 30px;
+
+  position: sticky;
+
+  top: 0;
+
+  z-index: 10;
+}
+
+
+.topbar h2 {
+  margin: 2px 0 0;
+
+  font-size: 20px;
+}
+
+
+.eyebrow {
+  font-size: 11px;
+
+  letter-spacing: 1.4px;
+
+  font-weight: 800;
+
+  color: #7c879c;
+}
+
+
+.top-actions {
+  display: flex;
+
+  gap: 18px;
+
+  align-items: center;
+}
+
+
+.top-actions #backendStatus {
+  font-size: 12px;
+
+  color: #5b667a;
+}
+
+
+.icon-btn {
+  display: none;
+
+  border: 0;
+
+  background: #f1f4f9;
+
+  padding: 9px;
+
+  border-radius: 9px;
+}
+
+
+
+/* ============================================================
+   CONTENT
+   ============================================================ */
+
+.content {
+  padding: 30px;
+
+  max-width: 1450px;
+
+  margin: auto;
+}
+
+
+.welcome {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  margin-bottom: 22px;
+}
+
+
+.welcome h1,
+.page-heading h1 {
+  margin: 5px 0;
+
+  font-size: 30px;
+}
+
+
+.welcome p,
+.page-heading p {
+  margin: 0;
+
+  color: #748096;
+}
+
+
+.page-heading {
+  margin-bottom: 20px;
+}
+
+
+
+/* ============================================================
+   HASANI BOOKS CREDIT CARD
+   85.60 / 53.98
+   ============================================================ */
+
+.discount-cards {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 24px;
+
+  align-items: start;
+
+  margin:
+    24px 0 30px;
+}
+
+
+.discount-card-wrap {
+  width: 100%;
+
+  min-width: 0;
+}
+
+
+.discount-card {
+  position: relative;
+
+  width: 100%;
+
+  aspect-ratio:
+    85.60 / 53.98;
+
+  overflow: hidden;
+
+  border-radius: 15px;
+
+  background: #fff;
+
+  border:
+    1px solid
+    #dfe4ee;
+
+  box-shadow:
+    0 14px 32px
+    rgba(20,32,60,.16);
+}
+
+
+
+/* ============================================================
+   FRONT HEADER
+   ============================================================ */
+
+.discount-front {
+  background: #fff;
+}
+
+
+.discount-front-header {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 43%;
+  background: linear-gradient(
+    135deg,
+    #263d92 0%,
+    #30479e 60%,
+    #24377f 100%
+  );
+  overflow: hidden;
+}
+
+.discount-front-logo {
+  position: absolute;
+  left: 5%;
+  top: 8%;
+  width: 67%;
+  height: 55%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  z-index: 3;
+  background: #e40707; /*Changed by WJI*/
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.discount-front-logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: left center;
+  filter: none;
+}
+
+/*
+ * Percentage watermark.
+ * This replaces the old B design.
+ */
+
+.discount-percent {
+  position: absolute;
+
+  right: 5%;
+
+  top: 2%;
+
+  color:
+    rgba(255,255,255,.13);
+
+  font-size:
+    clamp(65px, 8vw, 135px);
+
+  line-height: .8;
+
+  font-weight: 900;
+}
+
+
+/* DISCOUNT CARD */
+
+.discount-card-title {
+  position: absolute;
+
+  left: 5%;
+
+  bottom: 10%;
+
+  color: #fff;
+
+  font-size:
+    clamp(15px, 2vw, 29px);
+
+  line-height: 1;
+
+  font-weight: 900;
+
+  letter-spacing: .3px;
+
+  z-index: 4;
+}
+
+
+
+/* ============================================================
+   FRONT RED LINE
+   ============================================================ */
+
+.discount-red-divider {
+  position: absolute;
+
+  left: 0;
+
+  right: 0;
+
+  top: 43%;
+
+  height: 6px;
+
+  background: #ed2634;
+
+  z-index: 10;
+}
+
+
+
+/* ============================================================
+   FRONT WHITE BODY
+   ============================================================ */
+
+.discount-front-body {
+  position: absolute;
+
+  left: 0;
+
+  right: 0;
+
+  top:
+    calc(43% + 6px);
+
+  bottom: 0;
+
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      rgba(255,255,255,.94),
+      rgba(255,255,255,.94)
+    );
+}
+
+
+/* WATERMARK */
+
+.discount-watermark {
+  position: absolute;
+
+  inset: 4% 0 0;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, 1fr);
+
+  align-content: start;
+
+  gap: 7px 18px;
+
+  padding: 0 2%;
+
+  opacity: .06;
+
+  pointer-events: none;
+
+  user-select: none;
+}
+
+
+.discount-watermark span {
+  color: #263a91;
+
+  font-size:
+    clamp(7px, .85vw, 12px);
+
+  font-weight: 900;
+
+  white-space: nowrap;
+}
+
+
+
+/* ============================================================
+   MEMBER INFORMATION
+   ============================================================ */
+
+.discount-information {
+  position: absolute;
+
+  left: 5.5%;
+
+  top: 12%;
+
+  width: 55%;
+
+  z-index: 5;
+}
+
+
+.discount-field {
+  margin-bottom: 7%;
+}
+
+
+.discount-field label {
+  display: block;
+
+  margin-bottom: 3px;
+
+  color: #263d92;
+
+  font-size:
+    clamp(7px, .82vw, 12px);
+
+  line-height: 1;
+
+  font-weight: 900;
+}
+
+
+.discount-field strong {
+  display: block;
+
+  color: #111;
+
+  font-size:
+    clamp(10px, 1.45vw, 20px);
+
+  line-height: 1.15;
+
+  font-weight: 900;
+
+  word-break: break-word;
+}
+
+
+
+/* ============================================================
+   BARCODE
+   ============================================================ */
+
+.discount-barcode-box {
+  position: absolute;
+
+  right: -5%;
+
+  bottom: 55%;
+
+  width: 37%;
+
+  height: 25%;
+
+  padding:
+    5px 7px 3px;
+
+  .background: #fff;
+
+  .border:
+    2px solid
+    #8994a8;
+
+  .border-radius: 9px;
+
+  .box-shadow:
+    0 3px 9px
+    rgba(20,30,50,.20);
+
+  z-index: 8;
+}
+
+
+.discount-barcode-box img {
+  display: block;
+
+  width: 150%;
+
+  height: 165%;
+
+  object-fit: contain;
+
+  object-position: left;
+}
+
+
+
+/* ============================================================
+   BACK
+   ============================================================ */
+
+.discount-back {
+  background: #fff;
+}
+
+
+.discount-back-header {
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  top: 0;
+
+  height: 19%;
+
+  padding: 0 4%;
+
+  background: linear-gradient(
+    90deg,
+    #263b91,
+    #30479e,
+    #263a8d
+  );
+
+  display: flex;
+  align-items: center;
+
+  z-index: 5;
+}
+
+
+/* SOCIAL */
+
+.back-social-area {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  gap: 5px;
+
+  color: #ffffff;
+
+  width: 70%;
+
+  max-width: 70%;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+
+  z-index: 10;
+}
+
+.back-social-area strong {
+  font-size:
+    clamp(5px, .72vw, 10px);
+
+  font-weight: 900;
+}
+
+
+.back-social-area > span {
+  font-size: 8px;
+
+  opacity: .8;
+}
+
+
+.back-social-icons {
+  display: flex;
+
+  align-items: center;
+
+  gap: 4px;
+}
+
+
+.back-social {
+  width: 18px;
+
+  height: 18px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #181818;
+
+  color: #fff;
+
+  text-decoration: none;
+
+  font-size: 8px;
+
+  transition:
+    all .2s ease;
+}
+
+
+.back-social:hover {
+  transform:
+    translateY(-2px);
+}
+
+
+.back-social.facebook:hover {
+  background: #1877f2;
+}
+
+
+.back-social.instagram:hover {
+  background: #e1306c;
+}
+
+
+.back-social.tiktok:hover {
+  background: #000;
+}
+
+
+.back-social.whatsapp:hover {
+  background: #25d366;
+}
+
+
+
+/* BACK LOGO */
+
+./* ============================================================
+   BACK LOGO
+   ============================================================ */
+/* ============================================================
+   FINAL BACK LOGO FIX
+   SMALL 25% + RIGHT SIDE
+   ============================================================ */
+
+.discount-back .discount-back-header {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 0 !important;
+
+  height: 19% !important;
+
+  padding: 0 4% !important;
+
+  display: block !important;
+
+  box-sizing: border-box !important;
+}
+
+
+/* SOCIAL INFORMATION - LEFT */
+
+.discount-back .back-social-area {
+  position: absolute !important;
+
+  left: 4% !important;
+  top: 50% !important;
+
+  width: 65% !important;
+  max-width: 65% !important;
+
+  transform: translateY(-50%) !important;
+
+  display: flex !important;
+  align-items: center !important;
+
+  gap: 5px !important;
+
+  overflow: hidden !important;
+
+  white-space: nowrap !important;
+
+  z-index: 30 !important;
+}
+
+
+/* LOGO CONTAINER - RIGHT 25% */
+
+.discount-back .back-logo {
+  position: absolute !important;
+
+  right: 4% !important;
+  top: 15% !important;
+
+  width: 25% !important;
+  height: 70% !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  .background: #c00202 !important; /*Disable by WJI*/
+
+  border-radius: 3px !important;
+
+  overflow: hidden !important;
+
+  box-sizing: border-box !important;
+
+  z-index: 50 !important;
+}
+
+
+/* ACTUAL LOGO */
+
+.discount-back .back-logo img {
+  display: block !important;
+
+  width: 100% !important;
+  height: 100% !important;
+
+  max-width: 100% !important;
+  max-height: 100% !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  object-fit: contain !important;
+  object-position: center !important;
+
+  filter: none !important;
+
+  box-sizing: border-box !important;
+}
+/* ============================================================
+   BACK RED LINE
+   ============================================================ */
+
+.discount-back-red-line {
+  position: absolute;
+
+  left: 0;
+
+  right: 0;
+
+  top: 19%;
+
+  height: 4px;
+
+  background: #ed2634;
+
+  z-index: 8;
+}
+
+
+
+/* ============================================================
+   BACK TERMS
+   ============================================================ */
+
+.discount-back-content {
+  position: absolute;
+
+  left: 7%;
+
+  right: 8%;
+
+  top: 24%;
+
+  bottom: 16%;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: space-between;
+
+  z-index: 3;
+}
+
+
+.discount-rule {
+  color: #101010;
+
+  font-size:
+    clamp(6px, .82vw, 11px);
+
+  line-height: 1.25;
+
+  font-weight: 900;
+
+  padding-bottom: 4px;
+
+  border-bottom:
+    2px dotted
+    #777;
+}
+
+
+
+/* ============================================================
+   VERTICAL MEMBER DISCOUNT CARD
+   ============================================================ */
+
+.discount-vertical {
+  position: absolute;
+
+  right: 0;
+
+  top: 25%;
+
+  bottom: 19%;
+
+  width: 4.2%;
+
+  min-width: 20px;
+
+  background: #353d99;
+
+  color: #fff;
+
+  writing-mode:
+    vertical-rl;
+
+  transform:
+    rotate(180deg);
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  font-size:
+    clamp(6px, .72vw, 10px);
+
+  font-weight: 700;
+
+  letter-spacing: .3px;
+
+  z-index: 9;
+}
+
+
+
+/* ============================================================
+   BACK FOOTER
+   ============================================================ */
+
+.discount-back-footer {
+  position: absolute;
+
+  left: 0;
+
+  right: 0;
+
+  bottom: 0;
+
+  min-height: 15%;
+
+  padding:
+    4px 8% 4px 5%;
+
+  background:
+    linear-gradient(
+      90deg,
+      #353d99,
+      #3d3ca0
+    );
+
+  border-top:
+    3px solid
+    #ed2634;
+
+  color: #fff;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  z-index: 8;
+}
+
+
+.discount-back-footer strong,
+.discount-back-footer span {
+  font-size:
+    clamp(6px, .72vw, 10px);
+
+  line-height: 1.15;
+
+  font-weight: 900;
+}
+
+
+
+/* ============================================================
+   CARD LABEL
+   ============================================================ */
+
+.discount-card-label {
+  display: block;
+
+  width: max-content;
+
+  margin:
+    8px auto 0;
+
+  padding:
+    4px 12px;
+
+  border-radius: 20px;
+
+  background: #eef1f6;
+
+  color: #59657a;
+
+  font-size: 10px;
+
+  font-weight: 800;
+}
+
+
+
+/* ============================================================
+   STATISTICS
+   ============================================================ */
+
+.stat-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 15px;
+
+  margin:
+    18px 0;
+}
+
+
+.stat-card,
+.feature-card,
+.purchase-card,
+.empty-feature,
+.simple-table {
+  background: #fff;
+
+  border:
+    1px solid
+    #e8ebf2;
+
+  border-radius: 16px;
+
+  padding: 20px;
+}
+
+
+.stat-card span {
+  display: block;
+
+  color: #788398;
+
+  font-size: 13px;
+}
+
+
+.stat-card strong {
+  display: block;
+
+  font-size: 28px;
+
+  margin: 7px 0;
+}
+
+
+.stat-card small {
+  color: #8b94a6;
+}
+
+
+.section-title {
+  margin-top: 30px;
+}
+
+
+
+/* ============================================================
+   FEATURES
+   ============================================================ */
+
+.feature-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 15px;
+}
+
+
+.feature-card {
+  text-align: left;
+
+  border:
+    1px solid
+    #e8ebf2;
+
+  display: grid;
+
+  gap: 9px;
+
+  color: #172033;
+}
+
+
+.feature-card:hover {
+  border-color: #2358d8;
+
+  transform:
+    translateY(-2px);
+}
+
+
+.feature-card b {
+  font-size: 16px;
+}
+
+
+.feature-card span {
+  color: #7a8497;
+
+  line-height: 1.45;
+}
+
+
+
+/* ============================================================
+   PURCHASE
+   ============================================================ */
+
+.purchase-list {
+  display: grid;
+
+  gap: 12px;
+}
+
+
+.purchase-card {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  gap: 20px;
+}
+
+
+.purchase-main b {
+  display: block;
+
+  font-size: 16px;
+}
+
+
+.purchase-main span {
+  display: block;
+
+  color: #778298;
+
+  font-size: 13px;
+
+  margin-top: 5px;
+}
+
+
+.purchase-points {
+  text-align: right;
+}
+
+
+.purchase-points strong {
+  display: block;
+
+  font-size: 19px;
+}
+
+
+.purchase-points small {
+  color: #2f855a;
+}
+
+
+
+/* ============================================================
+   POINTS
+   ============================================================ */
+
+.points-hero {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 15px;
+
+  margin-bottom: 18px;
+}
+
+
+.points-hero > div {
+  background: #fff;
+
+  border:
+    1px solid
+    #e8ebf2;
+
+  border-radius: 16px;
+
+  padding: 22px;
+}
+
+
+.points-hero span {
+  display: block;
+
+  color: #788398;
+
+  font-size: 13px;
+}
+
+
+.points-hero strong {
+  display: block;
+
+  font-size: 29px;
+
+  margin-top: 8px;
+}
+
+
+.simple-table .row {
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr 1fr;
+
+  padding: 13px 0;
+
+  border-bottom:
+    1px solid
+    #edf0f5;
+}
+
+
+.simple-table .row:last-child {
+  border-bottom: 0;
+}
+
+
+
+/* ============================================================
+   PERSONAL INFORMATION
+   ============================================================ */
+
+.personal-info-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 15px;
+}
+
+
+.personal-info-card {
+  background: #fff;
+
+  border:
+    1px solid
+    #e8ebf2;
+
+  border-radius: 16px;
+
+  padding: 18px;
+}
+
+
+.personal-info-label {
+  display: block;
+
+  color: #788398;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  margin-bottom: 7px;
+}
+
+
+.personal-info-value {
+  display: block;
+
+  color: #172033;
+
+  font-size: 15px;
+
+  line-height: 1.35;
+}
+
+
+
+/* ============================================================
+   EMPTY
+   ============================================================ */
+
+.empty-feature {
+  text-align: center;
+
+  padding:
+    70px 20px;
+}
+
+
+.big-icon {
+  font-size: 48px;
+}
+
+
+.empty-feature h2 {
+  margin-bottom: 5px;
+}
+
+
+.empty-feature p {
+  color: #788398;
+
+  max-width: 600px;
+
+  margin:
+    0 auto 20px;
+}
+
+
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 1100px) {
+
+  .discount-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .discount-card {
+    max-width: 760px;
+
+    margin:
+      0 auto;
+  }
+
+  .personal-info-grid {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+}
+
+
+@media (max-width: 900px) {
+
+  .sidebar {
+    transform:
+      translateX(-100%);
+
+    transition:
+      transform .2s ease;
+  }
+
+
+  .sidebar.open {
+    transform:
+      translateX(0);
+  }
+
+
+  .main-area {
+    margin-left: 0;
+  }
+
+
+  .icon-btn {
+    display: block;
+  }
+
+
+  .topbar {
+    padding:
+      0 18px;
+  }
+
+
+  .content {
+    padding:
+      20px;
+  }
+
+
+  .stat-grid,
+  .points-hero {
+    grid-template-columns:
+      1fr;
+  }
+
+
+  .feature-grid {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+
+  .welcome {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+  }
+
+
+  .top-actions #backendStatus {
+    display: none;
+  }
+
+}
+
+
+@media (max-width: 600px) {
+
+  .login-logo img {
+    width:
+      min(100%, 300px);
+
+    max-height: 70px;
+  }
+
+
+  .personal-info-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+
+  .feature-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+
+  .content {
+    padding:
+      14px;
+  }
+
+
+  .discount-cards {
+    gap: 18px;
+  }
+
+
+  .discount-card {
+    border-radius:
+      11px;
+  }
+
+
+  .discount-front-logo {
+    width: 65%;
+  }
+
+
+  .discount-card-title {
+    font-size: 14px;
+  }
+
+
+  .discount-information {
+    width: 55%;
+  }
+
+
+  .discount-field strong {
+    font-size: 11px;
+  }
+
+
+  .discount-barcode-box {
+    width: 38%;
+
+    height: 25%;
+  }
+
+
+  .back-social {
+    width: 15px;
+
+    height: 15px;
+
+    font-size: 7px;
+  }
+
+
+  .back-social-area strong {
+    font-size: 6px;
+  }
+
+
+  .discount-rule {
+    font-size: 6.5px;
+  }
+
+
+  .discount-back-footer strong,
+  .discount-back-footer span {
+    font-size: 6px;
+  }
+
+
+  .purchase-card {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+  }
+
+
+  .purchase-points {
+    text-align:
+      left;
+  }
+
+}
+/* ============================================================
+   CLICKABLE PURCHASE HISTORY
+   ============================================================ */
+
+.purchase-card-clickable {
+  width: 100%;
+
+  border:
+    1px solid
+    #e8ebf2;
+
+  cursor: pointer;
+
+  text-align: left;
+
+  font: inherit;
+
+  color: inherit;
+
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease,
+    border-color .2s ease;
+}
+
+
+.purchase-card-clickable:hover {
+  transform:
+    translateY(-2px);
+
+  border-color:
+    #3158c9;
+
+  box-shadow:
+    0 10px 25px
+    rgba(20, 32, 60, .10);
+}
+
+
+.purchase-card-clickable:active {
+  transform:
+    translateY(0);
+}
+
+
+.purchase-view-hint {
+  display: block;
+
+  margin-top: 8px;
+
+  color:
+    #3158c9;
+
+  font-size: 12px;
+
+  font-weight: 700;
+}
+
+
+.purchase-points {
+  position: relative;
+
+  min-width: 130px;
+
+  padding-right: 20px;
+}
+
+
+.purchase-arrow {
+  position: absolute;
+
+  right: 0;
+  top: 50%;
+
+  transform:
+    translateY(-50%);
+
+  font-size: 24px;
+
+  color:
+    #3158c9;
+}
+
+
+/* ============================================================
+   PURCHASE DETAILS
+   ============================================================ */
+
+.purchase-detail-card {
+  background: #fff;
+
+  border:
+    1px solid
+    #e8ebf2;
+
+  border-radius: 18px;
+
+  padding: 24px;
+
+  box-shadow:
+    0 12px 30px
+    rgba(20, 32, 60, .08);
+}
+
+
+.back-purchases-btn {
+  border: 0;
+
+  background: transparent;
+
+  color:
+    #3158c9;
+
+  font-size: 14px;
+
+  font-weight: 800;
+
+  cursor: pointer;
+
+  padding: 0;
+
+  margin-bottom: 22px;
+}
+
+
+.back-purchases-btn:hover {
+  text-decoration: underline;
+}
+
+
+.purchase-detail-header {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-bottom: 20px;
+
+  border-bottom:
+    1px solid
+    #e8ebf2;
+}
+
+
+.purchase-detail-header h2 {
+  margin:
+    5px 0 4px;
+
+  font-size: 25px;
+}
+
+
+.purchase-detail-header p {
+  margin: 0;
+
+  color:
+    #788398;
+
+  font-size: 13px;
+}
+
+
+.purchase-detail-total {
+  text-align: right;
+}
+
+
+.purchase-detail-total span {
+  display: block;
+
+  color:
+    #788398;
+
+  font-size: 12px;
+}
+
+
+.purchase-detail-total strong {
+  display: block;
+
+  margin-top: 4px;
+
+  font-size: 26px;
+
+  color:
+    #263b91;
+}
+
+
+/* ============================================================
+   PURCHASE INFORMATION
+   ============================================================ */
+
+.purchase-info-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, 1fr);
+
+  gap: 12px;
+
+  margin:
+    20px 0;
+}
+
+
+.purchase-info-grid > div {
+  padding:
+    14px;
+
+  background:
+    #f7f8fb;
+
+  border-radius:
+    10px;
+}
+
+
+.purchase-info-grid span {
+  display: block;
+
+  color:
+    #788398;
+
+  font-size: 11px;
+
+  text-transform:
+    uppercase;
+
+  font-weight: 800;
+
+  margin-bottom:
+    5px;
+}
+
+
+.purchase-info-grid strong {
+  display: block;
+
+  color:
+    #172033;
+
+  font-size: 14px;
+}
+
+
+/* ============================================================
+   ITEMS
+   ============================================================ */
+
+.purchase-items-card {
+  border:
+    1px solid
+    #e8ebf2;
+
+  border-radius:
+    14px;
+
+  overflow:
+    hidden;
+}
+
+
+.purchase-items-title {
+  padding:
+    18px 20px;
+
+  background:
+    #f7f8fb;
+
+  border-bottom:
+    1px solid
+    #e8ebf2;
+}
+
+
+.purchase-items-title h3 {
+  margin:
+    4px 0 0;
+
+  font-size:
+    19px;
+}
+
+
+.purchase-items-list {
+  display:
+    grid;
+}
+
+
+.purchase-item-row {
+  display:
+    grid;
+
+  grid-template-columns:
+    34px minmax(0, 1fr) 70px 110px;
+
+  align-items:
+    center;
+
+  gap:
+    12px;
+
+  padding:
+    15px 20px;
+
+  border-bottom:
+    1px solid
+    #eef0f4;
+}
+
+
+.purchase-item-row:last-child {
+  border-bottom:
+    0;
+}
+
+
+.purchase-item-number {
+  width:
+    28px;
+
+  height:
+    28px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  border-radius:
+    50%;
+
+  background:
+    #eef1fa;
+
+  color:
+    #3158c9;
+
+  font-size:
+    12px;
+
+  font-weight:
+    800;
+}
+
+
+.purchase-item-info {
+  min-width:
+    0;
+}
+
+
+.purchase-item-info strong {
+  display:
+    block;
+
+  font-size:
+    14px;
+
+  color:
+    #172033;
+}
+
+
+.purchase-item-info small {
+  display:
+    block;
+
+  margin-top:
+    3px;
+
+  color:
+    #8992a3;
+
+  font-size:
+    11px;
+}
+
+
+.purchase-item-qty {
+  text-align:
+    center;
+
+  color:
+    #667085;
+
+  font-size:
+    13px;
+
+  font-weight:
+    700;
+}
+
+
+.purchase-item-price {
+  text-align:
+    right;
+
+  font-weight:
+    800;
+
+  color:
+    #172033;
+}
+
+
+/* ============================================================
+   PURCHASE SUMMARY
+   ============================================================ */
+
+.purchase-summary {
+  padding:
+    18px 20px;
+
+  background:
+    #fafbfc;
+}
+
+
+.purchase-summary > div {
+  display:
+    flex;
+
+  justify-content:
+    space-between;
+
+  gap:
+    20px;
+
+  padding:
+    5px 0;
+
+  color:
+    #697386;
+
+  font-size:
+    13px;
+}
+
+
+.purchase-summary-total {
+  margin-top:
+    8px;
+
+  padding-top:
+    12px !important;
+
+  border-top:
+    1px solid
+    #dfe3ea;
+
+  color:
+    #172033 !important;
+
+  font-size:
+    16px !important;
+}
+
+
+.purchase-summary-total strong {
+  color:
+    #263b91;
+}
+
+
+/* ============================================================
+   POINTS
+   ============================================================ */
+
+.purchase-points-detail {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  margin-top:
+    16px;
+
+  padding:
+    15px 18px;
+
+  background:
+    #eef8f2;
+
+  border:
+    1px solid
+    #d6efdf;
+
+  border-radius:
+    12px;
+}
+
+
+.purchase-points-detail span {
+  color:
+    #52655a;
+
+  font-size:
+    13px;
+}
+
+
+.purchase-points-detail strong {
+  color:
+    #24834b;
+
+  font-size:
+    14px;
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 700px) {
+
+  .purchase-detail-card {
+    padding:
+      16px;
+  }
+
+
+  .purchase-detail-header {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+  }
+
+
+  .purchase-detail-total {
+    text-align:
+      left;
+  }
+
+
+  .purchase-info-grid {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+
+  .purchase-item-row {
+    grid-template-columns:
+      28px minmax(0, 1fr) 50px 85px;
+
+    padding:
+      12px;
+  }
+
+
+  .purchase-item-price {
+    font-size:
+      13px;
+  }
+
+
+  .purchase-points {
+    min-width:
+      105px;
+  }
+
+}
+
+   HASANI BOOKS LOGIN PAGE
+   Premium Background Design
+   ========================================= */
+/* ============================================================
+   CLICKABLE PURCHASE HISTORY
+   ============================================================ */
+
+.purchase-card-clickable {
+  width: 100%;
+
+  border: 1px solid #e8ebf2;
+
+  cursor: pointer;
+
+  text-align: left;
+
+  font-family: inherit;
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+
+.purchase-card-clickable:hover {
+  transform: translateY(-2px);
+
+  border-color: #285bd7;
+
+  box-shadow:
+    0 10px 25px rgba(25, 55, 110, 0.10);
+}
+
+
+.purchase-card-clickable:focus {
+  outline: 3px solid rgba(40, 91, 215, 0.18);
+
+  outline-offset: 2px;
+}
+
+
+/* ============================================================
+   PURCHASE DETAIL MODAL
+   ============================================================ */
+
+.purchase-detail-modal {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 9999;
+
+  display: none;
+}
+
+
+.purchase-detail-modal.open {
+  display: block;
+}
+
+
+.purchase-detail-overlay {
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    rgba(7, 18, 42, 0.68);
+
+  backdrop-filter:
+    blur(5px);
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 20px;
+
+  overflow-y: auto;
+}
+
+
+.purchase-detail-box {
+  position: relative;
+
+  width: min(700px, 100%);
+
+  max-height: calc(100vh - 40px);
+
+  overflow-y: auto;
+
+  background: #ffffff;
+
+  border-radius: 20px;
+
+  padding: 28px;
+
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.30);
+}
+
+
+.purchase-detail-large {
+  width: min(1000px, 100%);
+}
+
+
+.purchase-detail-close {
+  position: absolute;
+
+  top: 15px;
+
+  right: 18px;
+
+  width: 38px;
+
+  height: 38px;
+
+  border: 0;
+
+  border-radius: 50%;
+
+  background: #eef1f6;
+
+  color: #172033;
+
+  font-size: 25px;
+
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+
+.purchase-detail-close:hover {
+  background: #e1e6ef;
+}
+
+
+.purchase-detail-header {
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-right: 45px;
+
+  margin-bottom: 22px;
+}
+
+
+.purchase-detail-header h2 {
+  margin: 4px 0 5px;
+
+  color: #12254b;
+}
+
+
+.purchase-detail-header p {
+  margin: 0;
+
+  color: #788398;
+
+  font-size: 13px;
+}
+
+
+.purchase-detail-total {
+  text-align: right;
+}
+
+
+.purchase-detail-total span {
+  display: block;
+
+  color: #788398;
+
+  font-size: 12px;
+}
+
+
+.purchase-detail-total strong {
+  display: block;
+
+  margin-top: 4px;
+
+  color: #2448a4;
+
+  font-size: 24px;
+}
+
+
+/* ============================================================
+   ITEM TABLE
+   ============================================================ */
+
+.purchase-items-wrapper {
+  overflow-x: auto;
+
+  border:
+    1px solid #e7ebf2;
+
+  border-radius: 12px;
+}
+
+
+.purchase-items-table {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  min-width: 680px;
+}
+
+
+.purchase-items-table th {
+  padding: 13px 12px;
+
+  background: #f4f6fa;
+
+  color: #5c6980;
+
+  font-size: 11px;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.05em;
+
+  text-align: left;
+}
+
+
+.purchase-items-table td {
+  padding: 14px 12px;
+
+  border-top:
+    1px solid #edf0f5;
+
+  color: #172033;
+
+  font-size: 13px;
+}
+
+
+.purchase-items-table td strong {
+  display: block;
+
+  font-size: 13px;
+}
+
+
+.purchase-items-table td small {
+  display: block;
+
+  margin-top: 4px;
+
+  color: #8a94a7;
+
+  font-size: 10px;
+}
+
+
+.item-number {
+  width: 28px;
+
+  height: 28px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #edf2ff;
+
+  color: #285bd7;
+
+  font-weight: 800;
+}
+
+
+.item-center {
+  text-align: center;
+}
+
+
+.item-money {
+  text-align: right;
+
+  white-space: nowrap;
+}
+
+
+/* ============================================================
+   TOTALS
+   ============================================================ */
+
+.purchase-totals {
+  width: min(400px, 100%);
+
+  margin:
+    20px 0 0 auto;
+}
+
+
+.purchase-totals > div {
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 9px 0;
+
+  color: #67748b;
+
+  border-bottom:
+    1px solid #edf0f5;
+}
+
+
+.purchase-totals strong {
+  color: #172033;
+}
+
+
+.purchase-totals .grand-total {
+  margin-top: 5px;
+
+  padding-top: 14px;
+
+  border-bottom: 0;
+
+  color: #12254b;
+
+  font-size: 18px;
+}
+
+
+.purchase-totals .grand-total strong {
+  color: #2448a4;
+
+  font-size: 20px;
+}
+
+
+/* ============================================================
+   EMPTY DETAILS
+   ============================================================ */
+
+.purchase-detail-empty {
+  margin-top: 20px;
+
+  padding: 35px 20px;
+
+  border-radius: 14px;
+
+  background: #f7f8fb;
+
+  text-align: center;
+}
+
+
+.purchase-detail-empty .big-icon {
+  font-size: 42px;
+
+  margin-bottom: 8px;
+}
+
+
+.purchase-detail-empty h3 {
+  margin: 8px 0;
+
+  color: #172033;
+}
+
+
+.purchase-detail-empty p {
+  margin: 0;
+
+  color: #788398;
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 700px) {
+
+  .purchase-detail-overlay {
+    padding: 10px;
+  }
+
+  .purchase-detail-box {
+    padding: 20px 15px;
+
+    border-radius: 15px;
+  }
+
+  .purchase-detail-header {
+    flex-direction: column;
+  }
+
+  .purchase-detail-total {
+    text-align: left;
+  }
+
+}
+/* =========================================================
+   MEMBERSHIP CARDS CONTAINER
+   ========================================================= */
+
+.membership-cards {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 24px;
+
+    width: 100%;
+    max-width: 1268px;
+
+    overflow: visible;
+}
+
+
+/* =========================================================
+   EACH CARD COLUMN
+   ========================================================= */
+
+.membership-card-wrapper {
+    width: 622px;
+    flex: 0 0 622px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    position: relative;
+}
+
+
+/* =========================================================
+   MEMBER 1 / MEMBER 2 CARD
+   ========================================================= */
+
+.member2-card,
+.teacher-card,
+.teacher-privilege-card {
+    position: relative;
+
+    width: 622px;
+    height: 392px;
+
+    flex: none;
+
+    box-sizing: border-box;
+
+    border-radius: 16px;
+
+    overflow: hidden;
+
+    isolation: isolate;
+}
+
+
+/* =========================================================
+   FRONT CARD
+   ========================================================= */
+
+.member2-card-front,
+.teacher-card-front {
+    position: relative;
+
+    width: 622px;
+    height: 392px;
+
+    flex: none;
+
+    box-sizing: border-box;
+
+    overflow: hidden;
+
+    border-radius: 16px;
+}
+
+
+/* =========================================================
+   BACK CARD
+   ========================================================= */
+
+.member2-card-back,
+.teacher-card-back {
+    position: relative;
+
+    width: 622px;
+    height: 392px;
+
+    flex: none;
+
+    box-sizing: border-box;
+
+    overflow: hidden;
+
+    border-radius: 16px;
+}
+
+
+/* =========================================================
+   IMPORTANT:
+   DO NOT ABSOLUTELY POSITION FRONT/BACK
+   ========================================================= */
+
+.member2-card-front,
+.member2-card-back,
+.teacher-card-front,
+.teacher-card-back {
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+
+    transform: none !important;
+}
+
+
+/* =========================================================
+   CARD CONTENT
+   ========================================================= */
+
+.member2-card img,
+.teacher-card img,
+.teacher-privilege-card img {
+    display: block;
+
+    width: 100%;
+    height: 100%;
+
+    max-width: none;
+    max-height: none;
+
+    object-fit: cover;
+
+    object-position: center;
+}
+
+
+/* =========================================================
+   CARD LABEL
+   ========================================================= */
+
+.membership-card-label {
+    width: 622px;
+
+    margin-top: 10px;
+
+    text-align: center;
+}
+
+
+/* =========================================================
+   MEMBER 2 DESIGN ELEMENTS
+   ========================================================= */
+
+.member2-card .back-logo,
+.teacher-card .back-logo,
+.teacher-privilege-card .back-logo {
+    position: absolute;
+
+    right: 20px;
+    top: 20px;
+
+    width: 25%;
+
+    height: auto;
+
+    z-index: 20;
+}
+
+
+/* =========================================================
+   PREVENT CARD SHRINKING
+   ========================================================= */
+
+.membership-cards > *,
+.membership-card-wrapper > * {
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   DESKTOP
+   ========================================================= */
+
+@media (min-width: 1200px) {
+
+    .membership-cards {
+        flex-wrap: nowrap;
+    }
+
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 1300px) {
+
+    .membership-cards {
+        gap: 18px;
+    }
+
+    .membership-card-wrapper {
+        width: 48%;
+        flex: 0 0 48%;
+    }
+
+    .member2-card,
+    .teacher-card,
+    .teacher-privilege-card,
+    .member2-card-front,
+    .member2-card-back,
+    .teacher-card-front,
+    .teacher-card-back {
+        width: 100%;
+        height: auto;
+
+        aspect-ratio: 622 / 392;
+    }
+
+    .membership-card-label {
+        width: 100%;
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+    .membership-cards {
+        display: flex;
+
+        flex-direction: column;
+
+        align-items: center;
+
+        width: 100%;
+
+        gap: 24px;
+    }
+
+    .membership-card-wrapper {
+        width: min(622px, 94vw);
+
+        max-width: 94vw;
+
+        flex: none;
+    }
+
+    .member2-card,
+    .teacher-card,
+    .teacher-privilege-card,
+    .member2-card-front,
+    .member2-card-back,
+    .teacher-card-front,
+    .teacher-card-back {
+        width: 100%;
+
+        height: auto;
+
+        aspect-ratio: 622 / 392;
+    }
+
+    .membership-card-label {
+        width: 100%;
+    }
+}
+/* ============================================================
+   MEMBER 2 — TEACHER PRIVILEGE CARD
+   CSS DESIGN ONLY
+   ============================================================ */
+
+
+/* ------------------------------------------------------------
+   MEMBER 2 FRONT
+   Same size as Member 1
+   ------------------------------------------------------------ */
+
+.discount-front.member2-active {
+
+  position: relative !important;
+
+  width: 100% !important;
+  height: 100% !important;
+
+  overflow: hidden !important;
+
+  border-radius: 16px !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      #24244f 0%,
+      #3c3c70 48%,
+      #77779d 100%
+    ) !important;
+
+  background-image:
+    linear-gradient(
+      135deg,
+      #24244f 0%,
+      #3c3c70 48%,
+      #77779d 100%
+    ) !important;
+}
+
+
+/* ------------------------------------------------------------
+   IMPORTANT
+   app.js currently adds member2-front.png.
+   CSS !important overrides that image.
+   ------------------------------------------------------------ */
+
+.discount-front.member2-active {
+
+  background-image:
+    linear-gradient(
+      135deg,
+      #25254f 0%,
+      #3d3d70 50%,
+      #77779d 100%
+    ) !important;
+}
+
+
+/* ------------------------------------------------------------
+   HIDE MEMBER 1 FRONT DESIGN
+   ------------------------------------------------------------ */
+
+.discount-front.member2-active
+.discount-front-header,
+.discount-front.member2-active
+.discount-red-divider,
+.discount-front.member2-active
+.discount-front-body {
+
+  display: none !important;
+}
+
+
+/* ------------------------------------------------------------
+   REAL HASANI BOOKS LOGO
+   ------------------------------------------------------------ */
+
+.discount-front.member2-active
+.member2-static-logo {
+
+  position: absolute !important;
+
+  left: 5.2% !important;
+  top: 7% !important;
+
+  width: 70% !important;
+  height: 22% !important;
+
+  display: flex !important;
+
+  align-items: center !important;
+  justify-content: flex-start !important;
+
+  visibility: visible !important;
+
+  z-index: 30 !important;
+}
+
+
+.discount-front.member2-active
+.member2-static-logo img {
+
+  display: block !important;
+
+  width: 100% !important;
+  height: 100% !important;
+
+  object-fit: contain !important;
+
+  object-position: left center !important;
+
+  filter: brightness(0) invert(1) !important;
+}
+
+
+/* ------------------------------------------------------------
+   TEACHER PRIVILEGE CARD TITLE
+   ------------------------------------------------------------ */
+
+.discount-front.member2-active
+.member2-static-title {
+
+  position: absolute !important;
+
+  left: 5.2% !important;
+  top: 30% !important;
+
+  color: #ffffff !important;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif !important;
+
+  font-size:
+    clamp(17px, 2vw, 25px) !important;
+
+  line-height: 1 !important;
+
+  font-weight: 900 !important;
+
+  letter-spacing: .3px !important;
+
+  visibility: visible !important;
+
+  z-index: 30 !important;
+}
+
+
+/* ------------------------------------------------------------
+   MEMBER 2 FRONT SHAPE
+   ------------------------------------------------------------ */
+
+.discount-front.member2-active::after {
+
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  right: 0;
+
+  top: 53%;
+
+  height: 14%;
+
+  background:
+    #b7b7c9;
+
+  clip-path:
+    polygon(
+      0 0,
+      43% 0,
+      47% 50%,
+      43% 100%,
+      0 100%
+    );
+
+  opacity: .9;
+
+  z-index: 10;
+}
+
+
+/* ------------------------------------------------------------
+   MEMBER 2 INFORMATION OVERLAY
+   CREATED BY app.js
+   ------------------------------------------------------------ */
+
+.discount-front.member2-active
+.member2-overlay {
+
+  position: absolute !important;
+
+  inset: 0 !important;
+
+  display: block !important;
+
+  visibility: visible !important;
+
+  z-index: 50 !important;
+
+  pointer-events: none !important;
+
+  color: #25294f !important;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif !important;
+}
+
+
+/* ------------------------------------------------------------
+   FRONT INFORMATION POSITION
+   ------------------------------------------------------------ */
+
+.discount-front.member2-active
+.member2-front-info {
+
+  position: absolute !important;
+
+  left: 7% !important;
+  right: 7% !important;
+
+  bottom: 6% !important;
+
+  height: 35% !important;
+
+  display: grid !important;
+
+  grid-template-columns:
+    1.45fr
+    1fr
+    1fr !important;
+
+  grid-template-rows:
+    auto
+    auto !important;
+
+  column-gap: 25px !important;
+
+  row-gap: 7px !important;
+
+  align-items: end !important;
+}
+
+
+/* ------------------------------------------------------------
+   MEMBER 2 FIELDS
+   ------------------------------------------------------------ */
+
+.discount-front.member2-active
+.member2-field {
+
+  min-width: 0 !important;
+
+  display: flex !important;
+
+  flex-direction: column !important;
+
+  justify-content: flex-end !important;
+}
+
+
+/* MEMBER NAME */
+
+.discount-front.member2-active
+.member2-field-name {
+
+  grid-column: 1 !important;
+
+  grid-row:
+    1 / span 2 !important;
+
+}
+
+
+/* MEMBER ID */
+
+.discount-front.member2-active
+.member2-field:nth-child(2) {
+
+  grid-column: 1 !important;
+
+  grid-row: 2 !important;
+}
+
+
+/* EXPIRY */
+
+.discount-front.member2-active
+.member2-field:nth-child(3) {
+
+  grid-column: 2 !important;
+
+  grid-row: 1 !important;
+}
+
+
+/* ISSUE BRANCH */
+
+.discount-front.member2-active
+.member2-field:nth-child(4) {
+
+  grid-column: 2 !important;
+
+  grid-row: 2 !important;
+}
+
+
+/* MEMBERSHIP TYPE HIDDEN */
+
+.discount-front.member2-active
+.member2-field:nth-child(5) {
+
+  display: none !important;
+}
+
+
+/* ------------------------------------------------------------
+   LABELS
+   ------------------------------------------------------------ */
+
+.discount-front.member2-active
+.member2-field label {
+
+  display: block !important;
+
+  margin-bottom: 3px !important;
+
+  color: #555871 !important;
+
+  font-size:
+    clamp(7px, .75vw, 11px) !important;
+
+  line-height: 1 !important;
+
+  font-weight: 900 !important;
+}
+
+
+/* ------------------------------------------------------------
+   VALUES
+   ------------------------------------------------------------ */
+
+.discount-front.member2-active
+.member2-field strong {
+
+  display: block !important;
+
+  color: #171a3d !important;
+
+  font-size:
+    clamp(11px, 1.25vw, 18px) !important;
+
+  line-height: 1.05 !important;
+
+  font-weight: 900 !important;
+
+  white-space: nowrap !important;
+
+  overflow: hidden !important;
+
+  text-overflow: ellipsis !important;
+}
+
+
+/* NAME BIGGER */
+
+.discount-front.member2-active
+.member2-field-name strong {
+
+  font-size:
+    clamp(15px, 1.65vw, 23px) !important;
+}
+
+
+/* ------------------------------------------------------------
+   BARCODE
+   ------------------------------------------------------------ */
+
+.discount-front.member2-active
+.member2-barcode {
+
+  position: absolute !important;
+
+  right: 7% !important;
+
+  bottom: 7% !important;
+
+  width: 27% !important;
+
+  height: 22% !important;
+
+  padding: 5px !important;
+
+  background: #ffffff !important;
+
+  border-radius: 4px !important;
+
+  object-fit: contain !important;
+
+  z-index: 60 !important;
+}
+
+
+/* ============================================================
+   MEMBER 2 BACK
+   ============================================================ */
+
+.discount-back.member2-active {
+
+  position: relative !important;
+
+  overflow: hidden !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      #39395e 0%,
+      #55557d 50%,
+      #74749d 100%
+    ) !important;
+
+  background-image:
+    linear-gradient(
+      135deg,
+      #39395e 0%,
+      #55557d 50%,
+      #74749d 100%
+    ) !important;
+}
+
+
+/* ------------------------------------------------------------
+   OVERRIDE app.js IMAGE
+   ------------------------------------------------------------ */
+
+.discount-back.member2-active {
+
+  background-image:
+    linear-gradient(
+      135deg,
+      #39395e 0%,
+      #55557d 50%,
+      #74749d 100%
+    ) !important;
+}
+
+
+/* ------------------------------------------------------------
+   BACK HEADER
+   ------------------------------------------------------------ */
+
+.discount-back.member2-active
+.discount-back-header {
+
+  display: flex !important;
+
+  position: absolute !important;
+
+  left: 0 !important;
+  right: 0 !important;
+  top: 0 !important;
+
+  height: 17% !important;
+
+  padding:
+    0 4% !important;
+
+  background:
+    transparent !important;
+
+  z-index: 30 !important;
+
+  visibility: visible !important;
+}
+
+
+/* ------------------------------------------------------------
+   BACK SOCIAL
+   ------------------------------------------------------------ */
+
+.discount-back.member2-active
+.back-social-area {
+
+  position: absolute !important;
+
+  left: 5% !important;
+
+  top: 50% !important;
+
+  width: 62% !important;
+
+  transform:
+    translateY(-50%) !important;
+
+  display: flex !important;
+
+  align-items: center !important;
+
+  gap: 5px !important;
+
+  color: #ffffff !important;
+
+  white-space: nowrap !important;
+
+  visibility: visible !important;
+
+  z-index: 40 !important;
+}
+
+
+.discount-back.member2-active
+.back-social-area strong,
+.discount-back.member2-active
+.back-social-area span {
+
+  color: #ffffff !important;
+
+  font-size:
+    clamp(6px, .65vw, 10px) !important;
+
+  font-weight: 800 !important;
+}
+
+
+/* ------------------------------------------------------------
+   BACK LOGO
+   ------------------------------------------------------------ */
+
+.discount-back.member2-active
+.back-logo {
+
+  position: absolute !important;
+
+  right: 5% !important;
+
+  top: 4% !important;
+
+  width: 25% !important;
+
+  height: 12% !important;
+
+  display: flex !important;
+
+  align-items: center !important;
+
+  justify-content: center !important;
+
+  background: #ffffff !important;
+
+  border-radius: 3px !important;
+
+  overflow: hidden !important;
+
+  visibility: visible !important;
+
+  z-index: 50 !important;
+}
+
+
+.discount-back.member2-active
+.back-logo img {
+
+  width: 100% !important;
+
+  height: 100% !important;
+
+  object-fit: contain !important;
+
+  object-position: center !important;
+
+  filter: none !important;
+}
+
+
+/* ------------------------------------------------------------
+   HIDE MEMBER 1 RED LINE
+   ------------------------------------------------------------ */
+
+.discount-back.member2-active
+.discount-back-red-line {
+
+  display: none !important;
+}
+
+
+/* ------------------------------------------------------------
+   MEMBER 2 BACK TERMS
+   ------------------------------------------------------------ */
+
+.discount-back.member2-active
+.discount-back-content {
+
+  position: absolute !important;
+
+  left: 6% !important;
+
+  right: 10% !important;
+
+  top: 22% !important;
+
+  bottom: 17% !important;
+
+  display: flex !important;
+
+  flex-direction: column !important;
+
+  justify-content: space-between !important;
+
+  visibility: visible !important;
+
+  z-index: 20 !important;
+}
+
+
+.discount-back.member2-active
+.discount-rule {
+
+  color: #ffffff !important;
+
+  font-size:
+    clamp(7px, .82vw, 11px) !important;
+
+  line-height: 1.25 !important;
+
+  font-weight: 500 !important;
+
+  padding-bottom: 7px !important;
+
+  border-bottom:
+    1px dotted
+    rgba(255,255,255,.65) !important;
+}
+
+
+/* ------------------------------------------------------------
+   TEACHER PRIVILEGE VERTICAL BAR
+   ------------------------------------------------------------ */
+
+.discount-back.member2-active
+.discount-vertical {
+
+  position: absolute !important;
+
+  right: 0 !important;
+
+  top: 22% !important;
+
+  bottom: 17% !important;
+
+  width: 6% !important;
+
+  min-width: 28px !important;
+
+  background:
+    #e96772 !important;
+
+  color: #ffffff !important;
+
+  writing-mode:
+    vertical-rl !important;
+
+  transform:
+    rotate(180deg) !important;
+
+  display: flex !important;
+
+  align-items: center !important;
+
+  justify-content: center !important;
+
+  font-size:
+    clamp(6px, .72vw, 10px) !important;
+
+  font-weight: 700 !important;
+
+  letter-spacing: .4px !important;
+
+  visibility: visible !important;
+
+  z-index: 50 !important;
+}
+
+
+/* ------------------------------------------------------------
+   MEMBER 2 FOOTER
+   ------------------------------------------------------------ */
+
+.discount-back.member2-active
+.discount-back-footer {
+
+  position: absolute !important;
+
+  left: 0 !important;
+
+  right: 0 !important;
+
+  bottom: 0 !important;
+
+  min-height: 15% !important;
+
+  padding:
+    5px 8% 5px 6% !important;
+
+  background:
+    rgba(48,48,83,.82) !important;
+
+  border-top:
+    1px solid
+    rgba(255,255,255,.35) !important;
+
+  color: #ffffff !important;
+
+  display: flex !important;
+
+  flex-direction: column !important;
+
+  justify-content: center !important;
+
+  visibility: visible !important;
+
+  z-index: 30 !important;
+}
+
+
+.discount-back.member2-active
+.discount-back-footer strong,
+.discount-back.member2-active
+.discount-back-footer span {
+
+  color: #ffffff !important;
+
+  font-size:
+    clamp(6px, .72vw, 10px) !important;
+
+  line-height: 1.15 !important;
+
+  font-weight: 700 !important;
+}
+
+
+/* ============================================================
+   MEMBER 2 — RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 900px) {
+
+  .discount-front.member2-active
+  .member2-static-logo {
+
+    width: 72% !important;
+
+  }
+
+
+  .discount-front.member2-active
+  .member2-front-info {
+
+    column-gap: 14px !important;
+
+  }
+
+
+  .discount-front.member2-active
+  .member2-field strong {
+
+    font-size: 10px !important;
+
+  }
+
+
+  .discount-front.member2-active
+  .member2-field-name strong {
+
+    font-size: 13px !important;
+
+  }
+
+
+  .discount-back.member2-active
+  .discount-rule {
+
+    font-size: 7px !important;
+
+  }
+
+}
+
+
+/* ============================================================
+   MEMBER 2 — MOBILE
+   ============================================================ */
+
+@media (max-width: 600px) {
+
+  .discount-front.member2-active
+  .member2-static-logo {
+
+    left: 5% !important;
+
+    top: 7% !important;
+
+    width: 72% !important;
+
+    height: 21% !important;
+
+  }
+
+
+  .discount-front.member2-active
+  .member2-static-title {
+
+    left: 5% !important;
+
+    top: 30% !important;
+
+    font-size: 15px !important;
+
+  }
+
+
+  .discount-front.member2-active
+  .member2-front-info {
+
+    left: 7% !important;
+
+    right: 7% !important;
+
+    bottom: 6% !important;
+
+    height: 34% !important;
+
+    column-gap: 9px !important;
+
+  }
+
+
+  .discount-front.member2-active
+  .member2-field label {
+
+    font-size: 6px !important;
+
+  }
+
+
+  .discount-front.member2-active
+  .member2-field strong {
+
+    font-size: 8px !important;
+
+  }
+
+
+  .discount-front.member2-active
+  .member2-field-name strong {
+
+    font-size: 11px !important;
+
+  }
+
+
+  .discount-front.member2-active
+  .member2-barcode {
+
+    width: 25% !important;
+
+    height: 20% !important;
+
+  }
+
+
+  .discount-back.member2-active
+  .back-social-area {
+
+    width: 62% !important;
+
+  }
+
+
+  .discount-back.member2-active
+  .back-social-area strong,
+  .discount-back.member2-active
+  .back-social-area span {
+
+    font-size: 5px !important;
+
+  }
+
+
+  .discount-back.member2-active
+  .back-logo {
+
+    width: 25% !important;
+
+    height: 12% !important;
+
+  }
+
+
+  .discount-back.member2-active
+  .discount-rule {
+
+    font-size: 6px !important;
+
+    padding-bottom: 4px !important;
+
+  }
+
+
+  .discount-back.member2-active
+  .discount-back-footer strong,
+  .discount-back.member2-active
+  .discount-back-footer span {
+
+    font-size: 5px !important;
+
+  }
+
+}
