@@ -138,7 +138,7 @@ Do not expose diagnostic endpoints on a public production deployment. They are i
 
 ## v7.1 API routing fix
 
-The Web and Flutter clients use `http://localhost:5000` as the base URL and explicitly call `/api/customer/...`. This prevents accidental `/api/api/...` URLs and matches the Node routes.
+
 =======
 # hasaniarms
 Membership 
