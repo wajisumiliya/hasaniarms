@@ -1,8 +1,12 @@
 {
   "name": "hasani-arms-customer-api",
-  "version": "7.0.0",
-  "type": "module",
+  "version": "7.4.0",
+  "description": "Hasani ARMS Customer API",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js"
