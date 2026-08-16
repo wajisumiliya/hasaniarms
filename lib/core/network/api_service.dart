@@ -9,17 +9,19 @@ class ApiService {
    * HASANI ARMS API SERVICE
    * ============================================================
    *
-   * Production APK:
+   * Production backend:
    *
    * https://hasaniarms.onrender.com
    *
-   * GitHub Actions supplies:
+   * The API URL can also be supplied during the Flutter build:
    *
    * --dart-define=API_BASE_URL=https://hasaniarms.onrender.com
    *
-   * IMPORTANT:
-   * localhost / 192.168.x.x must NOT be used in the production APK.
+   * The session cookie returned by the backend is stored locally
+   * and sent with subsequent API requests.
    */
+
+  static const String _cookieKey = 'hasani_session_cookie';
 
   final String baseUrl;
 
@@ -31,6 +33,10 @@ class ApiService {
                 defaultValue: 'https://hasaniarms.onrender.com',
               ),
         );
+
+  // ============================================================
+  // NORMALIZE URL
+  // ============================================================
 
   static String _normalizeBaseUrl(String value) {
     var url = value.trim();
@@ -49,36 +55,62 @@ class ApiService {
   Future<String?> _getCookie() async {
     final prefs = await SharedPreferences.getInstance();
 
-    return prefs.getString('hasani_session_cookie');
+    final cookie = prefs.getString(_cookieKey);
+
+    if (cookie == null || cookie.trim().isEmpty) {
+      return null;
+    }
+
+    return cookie.trim();
   }
 
+  // ============================================================
+  // SAVE SESSION COOKIE
+  // ============================================================
+
   Future<void> _saveCookie(http.Response response) async {
+    /*
+     * Express sends:
+     *
+     * Set-Cookie:
+     * hasani_customer_sid=....; Path=/; HttpOnly; Secure; ...
+     *
+     * We only need:
+     *
+     * hasani_customer_sid=....
+     */
+
     final setCookie = response.headers['set-cookie'];
 
-    if (setCookie == null || setCookie.isEmpty) {
+    if (setCookie == null || setCookie.trim().isEmpty) {
       return;
     }
 
+    String? cookie;
+
     /*
-     * Example:
+     * Normally Dart's http package exposes Set-Cookie as a header.
      *
-     * connect.sid=xxxxx; Path=/; HttpOnly; Secure
-     *
-     * We only store:
-     *
-     * connect.sid=xxxxx
+     * Find the actual cookie portion before the first semicolon.
      */
+    final parts = setCookie.split(';');
 
-    final cookie = setCookie.split(';').first.trim();
+    if (parts.isNotEmpty) {
+      final firstPart = parts.first.trim();
 
-    if (cookie.isEmpty) {
+      if (firstPart.contains('=')) {
+        cookie = firstPart;
+      }
+    }
+
+    if (cookie == null || cookie.isEmpty) {
       return;
     }
 
     final prefs = await SharedPreferences.getInstance();
 
     await prefs.setString(
-      'hasani_session_cookie',
+      _cookieKey,
       cookie,
     );
   }
@@ -114,42 +146,40 @@ class ApiService {
   Future<Map<String, dynamic>> get(String path) async {
     final uri = Uri.parse('$baseUrl$path');
 
-    final headers = await _headers();
-
-    http.Response response;
-
     try {
-      response = await http
-          .get(
-            uri,
-            headers: headers,
-          )
-          .timeout(
-            const Duration(seconds: 30),
-          );
+      final headers = await _headers();
+
+      final response = await http.get(
+        uri,
+        headers: headers,
+      );
+
+      /*
+       * Some endpoints can refresh/set the session cookie.
+       */
+      await _saveCookie(response);
+
+      return _decode(
+        response,
+        path: path,
+      );
     } on Exception catch (e) {
+      /*
+       * Preserve server/API errors.
+       *
+       * Only convert actual connection errors into the
+       * connection message.
+       */
+      if (e.toString().contains('Hasani server returned HTTP')) {
+        rethrow;
+      }
+
       throw Exception(
         'Unable to connect to Hasani server.\n\n'
         'Server: $baseUrl\n\n'
-        'Network error: $e',
+        'Please check your internet connection and try again.',
       );
     }
-
-    /*
-     * IMPORTANT:
-     *
-     * _decode() is intentionally OUTSIDE the try/catch above.
-     *
-     * This allows us to see real HTTP errors such as:
-     *
-     * 401
-     * 403
-     * 404
-     * 500
-     * 502
-     */
-
-    return _decode(response);
   }
 
   // ============================================================
@@ -162,57 +192,95 @@ class ApiService {
   ) async {
     final uri = Uri.parse('$baseUrl$path');
 
-    final headers = await _headers(
-      json: true,
-    );
+    /*
+     * If this is a new login, remove an old/stale session first.
+     *
+     * This prevents an expired cookie from interfering with
+     * the new login.
+     */
+    final isLogin = _isCustomerLogin(path);
 
-    http.Response response;
+    if (isLogin) {
+      await clearSession();
+    }
 
     try {
-      response = await http
-          .post(
-            uri,
-            headers: headers,
-            body: jsonEncode(body),
-          )
-          .timeout(
-            const Duration(seconds: 30),
-          );
+      final headers = await _headers(
+        json: true,
+      );
+
+      final response = await http.post(
+        uri,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      /*
+       * VERY IMPORTANT:
+       *
+       * Save the session cookie BEFORE decoding the response.
+       *
+       * The login endpoint creates the customer session here.
+       */
+      await _saveCookie(response);
+
+      final data = _decode(
+        response,
+        path: path,
+      );
+
+      /*
+       * If this was logout, remove the local cookie.
+       */
+      if (_isCustomerLogout(path)) {
+        await clearSession();
+      }
+
+      return data;
     } on Exception catch (e) {
       /*
-       * ONLY genuine network/request failures come here.
-       *
-       * HTTP errors do NOT come here.
+       * Preserve HTTP errors such as 401, 403, 404, etc.
        */
+      if (e.toString().contains('Hasani server returned HTTP')) {
+        rethrow;
+      }
 
       throw Exception(
         'Unable to connect to Hasani server.\n\n'
         'Server: $baseUrl\n\n'
-        'Network error: $e',
+        'Please check your internet connection and try again.',
       );
     }
+  }
 
-    // Save session cookie if the backend supplied one.
-    await _saveCookie(response);
+  // ============================================================
+  // LOGIN DETECTION
+  // ============================================================
 
-    /*
-     * Logout should clear the local session after the request.
-     */
+  bool _isCustomerLogin(String path) {
+    final normalized = path.toLowerCase();
 
-    final data = _decode(response);
+    return normalized.contains('/customer/login');
+  }
 
-    if (path.contains('/customer/logout')) {
-      await clearSession();
-    }
+  // ============================================================
+  // LOGOUT DETECTION
+  // ============================================================
 
-    return data;
+  bool _isCustomerLogout(String path) {
+    final normalized = path.toLowerCase();
+
+    return normalized.contains('/customer/logout');
   }
 
   // ============================================================
   // RESPONSE DECODER
   // ============================================================
 
-  Map<String, dynamic> _decode(http.Response response) {
+  Map<String, dynamic> _decode(
+    http.Response response, {
+    String? path,
+  }) {
     Map<String, dynamic> data;
 
     try {
@@ -220,10 +288,11 @@ class ApiService {
 
       if (decoded is Map<String, dynamic>) {
         data = decoded;
+      } else if (decoded is Map) {
+        data = Map<String, dynamic>.from(decoded);
       } else {
         data = {
           'error': 'Invalid server response',
-          'statusCode': response.statusCode,
         };
       }
     } catch (_) {
@@ -231,7 +300,6 @@ class ApiService {
         'error': response.body.isNotEmpty
             ? response.body
             : 'Invalid server response',
-        'statusCode': response.statusCode,
       };
     }
 
@@ -240,23 +308,58 @@ class ApiService {
     // ==========================================================
 
     if (response.statusCode >= 200 &&
-        response.statusCode < 400) {
+        response.statusCode < 300) {
       return data;
     }
 
     // ==========================================================
-    // REAL SERVER ERROR
+    // SESSION EXPIRED
     // ==========================================================
 
-    final errorMessage =
-        data['error'] ??
-        data['message'] ??
-        data['detail'] ??
-        'Request failed';
+    if (response.statusCode == 401) {
+      /*
+       * If the server says the session is invalid, remove the
+       * stale local cookie.
+       *
+       * The next login will start a completely fresh session.
+       */
+      clearSession();
+
+      throw Exception(
+        'Hasani server returned HTTP 401.\n\n'
+        '${data['error'] ?? data['message'] ?? 'Customer session expired. Please log in again.'}',
+      );
+    }
+
+    // ==========================================================
+    // FORBIDDEN
+    // ==========================================================
+
+    if (response.statusCode == 403) {
+      throw Exception(
+        'Hasani server returned HTTP 403.\n\n'
+        '${data['error'] ?? data['message'] ?? 'Access denied.'}',
+      );
+    }
+
+    // ==========================================================
+    // NOT FOUND
+    // ==========================================================
+
+    if (response.statusCode == 404) {
+      throw Exception(
+        'Hasani server returned HTTP 404.\n\n'
+        '${data['error'] ?? data['message'] ?? 'API endpoint not found.'}',
+      );
+    }
+
+    // ==========================================================
+    // OTHER SERVER ERRORS
+    // ==========================================================
 
     throw Exception(
       'Hasani server returned HTTP ${response.statusCode}.\n\n'
-      '$errorMessage',
+      '${data['error'] ?? data['message'] ?? 'Request failed.'}',
     );
   }
 
@@ -267,8 +370,41 @@ class ApiService {
   Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
 
-    await prefs.remove(
-      'hasani_session_cookie',
-    );
+    await prefs.remove(_cookieKey);
+  }
+
+  // ============================================================
+  // CHECK WHETHER A LOCAL SESSION EXISTS
+  // ============================================================
+
+  Future<bool> hasSession() async {
+    final cookie = await _getCookie();
+
+    return cookie != null && cookie.isNotEmpty;
+  }
+
+  // ============================================================
+  // DEBUG INFORMATION
+  // ============================================================
+
+  Future<String> debugSession() async {
+    final cookie = await _getCookie();
+
+    if (cookie == null || cookie.isEmpty) {
+      return 'No Hasani customer session cookie stored.';
+    }
+
+    /*
+     * Do not expose the complete session ID.
+     */
+    final separatorIndex = cookie.indexOf('=');
+
+    if (separatorIndex == -1) {
+      return 'Session cookie exists.';
+    }
+
+    final name = cookie.substring(0, separatorIndex);
+
+    return 'Hasani customer session cookie exists: $name=***';
   }
 }
