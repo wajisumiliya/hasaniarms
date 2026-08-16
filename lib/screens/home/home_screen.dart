@@ -5,7 +5,9 @@ import 'package:barcode_widget/barcode_widget.dart';
 import '../../core/network/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -24,7 +26,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? dashboard;
 
   String? errorMessage;
+
   bool loading = false;
+  bool obscurePassword = true;
 
   @override
   void dispose() {
@@ -34,9 +38,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> login() async {
-    if (loading) {
-      return;
-    }
+    if (loading) return;
+
+    FocusScope.of(context).unfocus();
 
     setState(() {
       loading = true;
@@ -52,50 +56,33 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       );
 
-      final loggedCustomer = response['customer'];
+      final customerData = response['customer'];
 
-      if (loggedCustomer == null) {
-        throw Exception(
-          'Invalid customer data returned by server.',
-        );
+      if (customerData is! Map) {
+        throw Exception('Customer information was not returned.');
       }
 
-      final customerData =
-          Map<String, dynamic>.from(loggedCustomer);
+      final dashboardData =
+          await api.get('/api/customer/dashboard');
 
-      Map<String, dynamic> dashboardData = {};
-
-      try {
-        final dashboardResponse =
-            await api.get('/api/customer/dashboard');
-
-        dashboardData =
-            Map<String, dynamic>.from(dashboardResponse);
-      } catch (_) {
-        dashboardData = {};
-      }
-
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       setState(() {
-        customer = customerData;
+        customer = Map<String, dynamic>.from(customerData);
         dashboard = dashboardData;
         errorMessage = null;
       });
     } catch (e) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       setState(() {
-        errorMessage = e.toString();
+        errorMessage = e.toString().replaceFirst(
+              'Exception: ',
+              '',
+            );
       });
     } finally {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       setState(() {
         loading = false;
@@ -109,15 +96,11 @@ class _HomeScreenState extends State<HomeScreen> {
         '/api/customer/logout',
         {},
       );
-    } catch (_) {}
-
-    try {
+    } catch (_) {
       await api.clearSession();
-    } catch (_) {}
-
-    if (!mounted) {
-      return;
     }
+
+    if (!mounted) return;
 
     setState(() {
       customer = null;
@@ -126,61 +109,13 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  List<Map<String, dynamic>> get purchases {
-    final value = dashboard?['purchases'];
-
-    if (value is! List) {
-      return [];
-    }
-
-    return value
-        .whereType<Map>()
-        .map(
-          (item) => Map<String, dynamic>.from(item),
-        )
-        .toList();
-  }
-
-  int get points {
-    final value = customer?['points'];
-
-    if (value is num) {
-      return value.toInt();
-    }
-
-    return int.tryParse(
-          value?.toString() ?? '0',
-        ) ??
-        0;
-  }
-
-  double get totalSpend {
-    double total = 0;
-
-    for (final purchase in purchases) {
-      final value = purchase['total'];
-
-      if (value is num) {
-        total += value.toDouble();
-      } else {
-        total +=
-            double.tryParse(
-              value?.toString() ?? '0',
-            ) ??
-            0;
-      }
-    }
-
-    return total;
-  }
-
   @override
   Widget build(BuildContext context) {
     if (customer == null) {
       return _buildLoginScreen();
     }
 
-    return _buildDashboardScreen();
+    return _buildDashboard();
   }
 
   Widget _buildLoginScreen() {
@@ -191,95 +126,162 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
               constraints: const BoxConstraints(
-                maxWidth: 450,
+                maxWidth: 460,
               ),
               child: Card(
-                elevation: 4,
+                elevation: 5,
+                margin: EdgeInsets.zero,
                 child: Padding(
-                  padding: const EdgeInsets.all(28),
+                  padding: const EdgeInsets.fromLTRB(
+                    28,
+                    30,
+                    28,
+                    28,
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Hasani Customer',
-                        style: TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Member Login',
-                        style: TextStyle(
-                          fontSize: 17,
-                        ),
-                      ),
-                      const SizedBox(height: 26),
-                      TextField(
-                        controller: memberController,
-                        keyboardType:
-                            TextInputType.number,
-                        decoration:
-                            const InputDecoration(
-                          labelText:
-                              'Membership Card Number',
-                          prefixIcon:
-                              Icon(Icons.badge_outlined),
-                          border:
-                              OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: passwordController,
-                        obscureText: true,
-                        decoration:
-                            const InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon:
-                              Icon(Icons.lock_outline),
-                          border:
-                              OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: FilledButton(
-                          onPressed:
-                              loading ? null : login,
-                          child: Text(
-                            loading
-                                ? 'Signing in...'
-                                : 'Login',
+                      _buildLogo(),
+
+                      const SizedBox(height: 22),
+
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Hasani Customer',
+                          style: TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
+
+                      const SizedBox(height: 6),
+
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Member Login',
+                          style: TextStyle(
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      TextField(
+                        controller: memberController,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          labelText: 'Membership Card Number',
+                          prefixIcon: Icon(
+                            Icons.badge_outlined,
+                          ),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      TextField(
+                        controller: passwordController,
+                        obscureText: obscurePassword,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => login(),
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: const Icon(
+                            Icons.lock_outline,
+                          ),
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                obscurePassword =
+                                    !obscurePassword;
+                              });
+                            },
+                            icon: Icon(
+                              obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons
+                                      .visibility_off_outlined,
+                            ),
+                          ),
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54,
+                        child: FilledButton(
+                          onPressed: loading ? null : login,
+                          child: loading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child:
+                                      CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              : const Text(
+                                  'Login',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight:
+                                        FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+
                       if (errorMessage != null) ...[
                         const SizedBox(height: 16),
                         Container(
                           width: double.infinity,
-                          padding:
-                              const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: Colors.red
-                                .withValues(alpha: 0.08),
-                            borderRadius:
-                                BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            errorMessage!,
-                            style:
-                                const TextStyle(
-                              color: Colors.red,
+                            color: Colors.red.withValues(
+                              alpha: 0.08,
                             ),
+                            borderRadius:
+                                BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.red.withValues(
+                                alpha: 0.2,
+                              ),
+                            ),
+                          ),
+                          child: Row(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                color: Colors.red,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  errorMessage!,
+                                  style: const TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
+
                       const SizedBox(height: 18),
+
                       const Text(
                         'Initial test password: 123123',
                         style: TextStyle(
@@ -297,141 +299,46 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDashboardScreen() {
-    final name =
-        customer?['name']?.toString() ?? 'Member';
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hasani Customer'),
-        actions: [
-          IconButton(
-            tooltip: 'Logout',
-            onPressed: logout,
-            icon: const Icon(Icons.logout),
+  Widget _buildLogo() {
+    return Container(
+      width: 96,
+      height: 96,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xff2358d8),
+            Color(0xff153b99),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 12,
+            offset: Offset(0, 6),
           ),
         ],
       ),
-      drawer: _buildDrawer(),
-      body: RefreshIndicator(
-        onRefresh: _refreshDashboard,
-        child: ListView(
-          physics:
-              const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(18),
+      child: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Icon(
+              Icons.shopping_bag_rounded,
+              color: Colors.white,
+              size: 42,
+            ),
+            SizedBox(height: 2),
             Text(
-              'Welcome, $name',
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
+              'HASANI',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.5,
               ),
-            ),
-            const SizedBox(height: 18),
-            _buildMemberCard(customer ?? {}),
-            const SizedBox(height: 16),
-            Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Points',
-                    points.toString(),
-                    Icons.stars,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildStatCard(
-                    'Purchase',
-                    'RM ${totalSpend.toStringAsFixed(2)}',
-                    Icons.receipt_long,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildStatCard(
-                    'Transactions',
-                    purchases.length.toString(),
-                    Icons.shopping_bag,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 22),
-            _buildSection(
-              'Quick Access',
-              [
-                _buildMenuTile(
-                  icon: Icons.receipt_long,
-                  title: 'Purchase History',
-                  subtitle: 'View your purchases',
-                  onTap: () {
-                    _showPurchases(
-                      context,
-                      purchases,
-                    );
-                  },
-                ),
-                _buildMenuTile(
-                  icon: Icons.stars,
-                  title: 'Member Points',
-                  subtitle:
-                      'Points earned from purchases',
-                  onTap: () {
-                    _showPoints(
-                      context,
-                      points,
-                      totalSpend,
-                    );
-                  },
-                ),
-                _buildMenuTile(
-                  icon: Icons.card_giftcard,
-                  title: 'Rewards',
-                  subtitle: 'Member rewards',
-                  onTap: () {
-                    _showComingSoon(
-                      context,
-                      'Rewards',
-                    );
-                  },
-                ),
-                _buildMenuTile(
-                  icon: Icons.local_offer,
-                  title: 'Offers',
-                  subtitle: 'Special member offers',
-                  onTap: () {
-                    _showComingSoon(
-                      context,
-                      'Offers',
-                    );
-                  },
-                ),
-                _buildMenuTile(
-                  icon: Icons.shopping_cart,
-                  title: 'Online Store',
-                  subtitle: 'Shop online',
-                  onTap: () {
-                    _showComingSoon(
-                      context,
-                      'Online Store',
-                    );
-                  },
-                ),
-                _buildMenuTile(
-                  icon: Icons.location_on,
-                  title: 'Locations',
-                  subtitle: 'Find Hasani stores',
-                  onTap: () {
-                    _showComingSoon(
-                      context,
-                      'Locations',
-                    );
-                  },
-                ),
-              ],
             ),
           ],
         ),
@@ -439,90 +346,99 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _refreshDashboard() async {
-    try {
-      final response =
-          await api.get('/api/customer/dashboard');
+  Widget _buildDashboard() {
+    final purchases =
+        dashboard?['purchases'] as List? ?? [];
 
-      if (!mounted) {
-        return;
+    final points = _numberValue(
+      customer?['points'],
+    );
+
+    double totalSpend = 0;
+
+    for (final item in purchases) {
+      if (item is Map) {
+        totalSpend += _doubleValue(
+          item['total'],
+        );
       }
-
-      setState(() {
-        dashboard =
-            Map<String, dynamic>.from(response);
-      });
-    } catch (e) {
-      if (!mounted) {
-        return;
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Unable to refresh dashboard: $e',
-          ),
-        ),
-      );
     }
-  }
 
-  Widget _buildDrawer() {
-    return Drawer(
-      child: SafeArea(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Hasani Customer',
+        ),
+        actions: [
+          IconButton(
+            onPressed: logout,
+            tooltip: 'Logout',
+            icon: const Icon(
+              Icons.logout,
+            ),
+          ),
+        ],
+      ),
+      drawer: Drawer(
         child: ListView(
-          padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
               child: Column(
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.account_circle,
-                    size: 58,
-                  ),
+                  _smallLogo(),
                   const SizedBox(height: 8),
                   const Text(
                     'Member Menu',
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
               ),
             ),
+
             ListTile(
-              leading:
-                  const Icon(Icons.dashboard),
-              title:
-                  const Text('Dashboard'),
+              leading: const Icon(
+                Icons.dashboard_outlined,
+              ),
+              title: const Text(
+                'Dashboard',
+              ),
               onTap: () {
                 Navigator.pop(context);
               },
             ),
+
             ListTile(
               leading: const Icon(
-                Icons.receipt_long,
+                Icons.receipt_long_outlined,
               ),
-              title:
-                  const Text('Purchase History'),
+              title: const Text(
+                'Purchase History',
+              ),
               onTap: () {
                 Navigator.pop(context);
+
                 _showPurchases(
                   context,
                   purchases,
                 );
               },
             ),
+
             ListTile(
-              leading:
-                  const Icon(Icons.stars),
-              title:
-                  const Text('Member Points'),
+              leading: const Icon(
+                Icons.stars_outlined,
+              ),
+              title: const Text(
+                'Member Points',
+              ),
               onTap: () {
                 Navigator.pop(context);
+
                 _showPoints(
                   context,
                   points,
@@ -530,40 +446,159 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
+
             const ListTile(
-              leading:
-                  Icon(Icons.card_giftcard),
-              title:
-                  Text('Rewards'),
+              leading: Icon(
+                Icons.card_giftcard_outlined,
+              ),
+              title: Text(
+                'Rewards',
+              ),
             ),
+
             const ListTile(
-              leading:
-                  Icon(Icons.local_offer),
-              title:
-                  Text('Offers'),
+              leading: Icon(
+                Icons.local_offer_outlined,
+              ),
+              title: Text(
+                'Offers',
+              ),
             ),
+
             const ListTile(
-              leading:
-                  Icon(Icons.shopping_cart),
-              title:
-                  Text('Online Store'),
+              leading: Icon(
+                Icons.shopping_cart_outlined,
+              ),
+              title: Text(
+                'Online Store',
+              ),
             ),
+
             const ListTile(
-              leading:
-                  Icon(Icons.location_on),
-              title:
-                  Text('Locations'),
+              leading: Icon(
+                Icons.location_on_outlined,
+              ),
+              title: Text(
+                'Locations',
+              ),
             ),
+
             const Divider(),
+
             ListTile(
-              leading:
-                  const Icon(Icons.logout),
-              title:
-                  const Text('Logout'),
-              onTap: () async {
-                Navigator.pop(context);
-                await logout();
-              },
+              leading: const Icon(
+                Icons.logout,
+              ),
+              title: const Text(
+                'Logout',
+              ),
+              onTap: logout,
+            ),
+          ],
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: login,
+        child: ListView(
+          padding: const EdgeInsets.all(18),
+          children: [
+            Text(
+              'Welcome, ${customer?['name'] ?? 'Member'}',
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            _memberCard(
+              customer!,
+            ),
+
+            const SizedBox(height: 14),
+
+            Row(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _stat(
+                    'Points',
+                    '$points',
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _stat(
+                    'Purchase',
+                    'RM ${totalSpend.toStringAsFixed(2)}',
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _stat(
+                    'Transactions',
+                    '${purchases.length}',
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 22),
+
+            _section(
+              'Quick Access',
+              [
+                _tile(
+                  Icons.receipt_long_outlined,
+                  'Purchase History',
+                  'View your purchases',
+                  () => _showPurchases(
+                    context,
+                    purchases,
+                  ),
+                ),
+
+                _tile(
+                  Icons.stars_outlined,
+                  'Member Points',
+                  'Points earned from purchases',
+                  () => _showPoints(
+                    context,
+                    points,
+                    totalSpend,
+                  ),
+                ),
+
+                _tile(
+                  Icons.card_giftcard_outlined,
+                  'Rewards',
+                  'Member rewards',
+                  null,
+                ),
+
+                _tile(
+                  Icons.local_offer_outlined,
+                  'Offers',
+                  'Special offers',
+                  null,
+                ),
+
+                _tile(
+                  Icons.shopping_cart_outlined,
+                  'Online Store',
+                  'Shop online',
+                  null,
+                ),
+
+                _tile(
+                  Icons.location_on_outlined,
+                  'Locations',
+                  'Find stores',
+                  null,
+                ),
+              ],
             ),
           ],
         ),
@@ -571,7 +606,23 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMemberCard(
+  Widget _smallLogo() {
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: const Color(0xff2358d8),
+      ),
+      child: const Icon(
+        Icons.shopping_bag_rounded,
+        color: Colors.white,
+        size: 28,
+      ),
+    );
+  }
+
+  Widget _memberCard(
     Map<String, dynamic> data,
   ) {
     final name =
@@ -581,7 +632,6 @@ class _HomeScreenState extends State<HomeScreen> {
         data['membership']?.toString() ?? '';
 
     return Card(
-      clipBehavior: Clip.antiAlias,
       color: const Color(0xff2358d8),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -597,7 +647,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 letterSpacing: 1.2,
               ),
             ),
-            const SizedBox(height: 6),
+
+            const SizedBox(height: 4),
+
             Text(
               name,
               style: const TextStyle(
@@ -606,41 +658,40 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 4),
+
             Text(
               membership,
               style: const TextStyle(
                 color: Colors.white70,
-                fontSize: 15,
               ),
             ),
+
             const SizedBox(height: 18),
+
             Wrap(
               spacing: 14,
               runSpacing: 14,
+              crossAxisAlignment:
+                  WrapCrossAlignment.end,
               children: [
                 Container(
                   color: Colors.white,
-                  padding:
-                      const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(7),
                   child: QrImageView(
                     data:
                         'HASANI-MEMBER:$membership',
-                    size: 100,
+                    size: 90,
                   ),
                 ),
+
                 Container(
-                  width: 210,
                   color: Colors.white,
-                  padding:
-                      const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(7),
+                  width: 210,
                   child: BarcodeWidget(
-                    barcode:
-                        Barcode.code128(),
-                    data: membership.isEmpty
-                        ? 'HASANI'
-                        : membership,
-                    height: 65,
+                    barcode: Barcode.code128(),
+                    data: membership,
+                    height: 60,
                     drawText: true,
                   ),
                 ),
@@ -652,10 +703,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStatCard(
+  Widget _stat(
     String title,
     String value,
-    IconData icon,
   ) {
     return Card(
       child: Padding(
@@ -664,11 +714,6 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment:
               CrossAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              size: 22,
-            ),
-            const SizedBox(height: 8),
             Text(
               title,
               style: const TextStyle(
@@ -676,17 +721,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontSize: 12,
               ),
             ),
+
             const SizedBox(height: 5),
-            FittedBox(
-              alignment:
-                  Alignment.centerLeft,
-              fit: BoxFit.scaleDown,
-              child: Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.bold,
-                ),
+
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
@@ -695,7 +739,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSection(
+  Widget _section(
     String title,
     List<Widget> children,
   ) {
@@ -710,25 +754,28 @@ class _HomeScreenState extends State<HomeScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+
         const SizedBox(height: 10),
+
         ...children,
       ],
     );
   }
 
-  Widget _buildMenuTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
+  Widget _tile(
+    IconData icon,
+    String title,
+    String subtitle,
     VoidCallback? onTap,
-  }) {
+  ) {
     return Card(
       child: ListTile(
         leading: Icon(icon),
         title: Text(title),
         subtitle: Text(subtitle),
-        trailing:
-            const Icon(Icons.chevron_right),
+        trailing: const Icon(
+          Icons.chevron_right,
+        ),
         onTap: onTap,
       ),
     );
@@ -736,96 +783,68 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showPurchases(
     BuildContext context,
-    List<Map<String, dynamic>> purchaseList,
+    List purchases,
   ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (sheetContext) {
+      builder: (_) {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(20),
-            child: SizedBox(
-              height:
-                  MediaQuery.of(context)
-                          .size
-                          .height *
-                      0.75,
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Purchase History',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight:
-                          FontWeight.bold,
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                const Text(
+                  'Purchase History',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                if (purchases.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Center(
+                      child: Text(
+                        'No purchases found.',
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  if (purchaseList.isEmpty)
-                    const Expanded(
-                      child: Center(
-                        child: Text(
-                          'No purchases found.',
+
+                ...purchases.map(
+                  (purchase) {
+                    final p =
+                        Map<String, dynamic>.from(
+                      purchase as Map,
+                    );
+
+                    final total =
+                        _doubleValue(p['total']);
+
+                    return ListTile(
+                      leading: const CircleAvatar(
+                        child: Icon(
+                          Icons.receipt_long,
                         ),
                       ),
-                    )
-                  else
-                    Expanded(
-                      child:
-                          ListView.builder(
-                        itemCount:
-                            purchaseList.length,
-                        itemBuilder:
-                            (context, index) {
-                          final purchase =
-                              purchaseList[
-                                  index];
-
-                          final receipt =
-                              purchase[
-                                          'receiptNo']
-                                      ?.toString() ??
-                                  '-';
-
-                          final date =
-                              purchase['date']
-                                      ?.toString() ??
-                                  '-';
-
-                          final purchasePoints =
-                              purchase[
-                                          'points']
-                                      ?.toString() ??
-                                  '0';
-
-                          final totalValue =
-                              _toDouble(
-                            purchase['total'],
-                          );
-
-                          return Card(
-                            child: ListTile(
-                              title: Text(
-                                'Receipt #$receipt',
-                              ),
-                              subtitle: Text(
-                                '$date · +'
-                                '$purchasePoints points',
-                              ),
-                              trailing: Text(
-                                'RM '
-                                '${totalValue.toStringAsFixed(2)}',
-                              ),
-                            ),
-                          );
-                        },
+                      title: Text(
+                        'Receipt #${p['receiptNo'] ?? '-'}',
                       ),
-                    ),
-                ],
-              ),
+                      subtitle: Text(
+                        '${p['date'] ?? '-'} · '
+                        '+${p['points'] ?? 0} points',
+                      ),
+                      trailing: Text(
+                        'RM ${total.toStringAsFixed(2)}',
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         );
@@ -835,18 +854,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showPoints(
     BuildContext context,
-    int currentPoints,
+    int points,
     double spend,
   ) {
     showModalBottomSheet(
       context: context,
-      builder: (sheetContext) {
+      builder: (_) {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
-              mainAxisSize:
-                  MainAxisSize.min,
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment:
                   CrossAxisAlignment.start,
               children: [
@@ -854,25 +872,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   'Member Points',
                   style: TextStyle(
                     fontSize: 24,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+
                 const SizedBox(height: 14),
+
                 Text(
-                  'Current points: '
-                  '$currentPoints',
+                  'Current points: $points',
                 ),
-                const SizedBox(height: 8),
+
+                const SizedBox(height: 6),
+
                 Text(
                   'Verified purchase value: '
                   'RM ${spend.toStringAsFixed(2)}',
                 ),
-                const SizedBox(height: 8),
+
+                const SizedBox(height: 6),
+
                 Text(
-                  'Points earned: '
-                  '$currentPoints',
+                  'Points earned: $points',
                 ),
+
                 const SizedBox(height: 20),
               ],
             ),
@@ -882,27 +904,24 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showComingSoon(
-    BuildContext context,
-    String feature,
-  ) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
-      SnackBar(
-        content: Text(
-          '$feature will be available soon.',
-        ),
-      ),
-    );
+  int _numberValue(dynamic value) {
+    if (value is num) {
+      return value.toInt();
+    }
+
+    return int.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0;
   }
 
-  double _toDouble(dynamic value) {
+  double _doubleValue(dynamic value) {
     if (value is num) {
       return value.toDouble();
     }
 
     return double.tryParse(
-          value?.toString() ?? '0',
+          value?.toString() ?? '',
         ) ??
         0;
   }
