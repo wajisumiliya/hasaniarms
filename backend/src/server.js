@@ -14,6 +14,13 @@ import {
 } from "./arms.js";
 
 const app = express();
+
+/*
+|--------------------------------------------------------------------------
+| PORT
+|--------------------------------------------------------------------------
+*/
+
 const port = Number(process.env.PORT || 5000);
 
 /*
@@ -25,53 +32,34 @@ const port = Number(process.env.PORT || 5000);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// C:\123\backend\src\server.js
-// C:\123\web\index.html
 const webPath = path.resolve(__dirname, "../../web");
 
-const frontendOrigin =
-  process.env.FRONTEND_ORIGIN || "http://localhost:5000";
+/*
+|--------------------------------------------------------------------------
+| CONFIGURATION
+|--------------------------------------------------------------------------
+*/
 
 const cookieName =
   process.env.CUSTOMER_SESSION_COOKIE ||
   "hasani_customer_sid";
 
+const CUSTOMER_PASSWORD =
+  process.env.CUSTOMER_PASSWORD || "123123";
+
 /*
 |--------------------------------------------------------------------------
 | CORS
 |--------------------------------------------------------------------------
+|
+| The Android application does not depend on browser CORS.
+| We still enable credentials for the web frontend.
+|
 */
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow PowerShell, curl and direct server requests
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      const allowed =
-        origin === "http://localhost:5000" ||
-        origin === "http://127.0.0.1:5000" ||
-        origin === "http://localhost:5500" ||
-        origin === "http://127.0.0.1:5500" ||
-        origin === frontendOrigin ||
-        /^http:\/\/192\.168\.0\.\d{1,3}(:\d+)?$/.test(origin);
-
-      if (allowed) {
-        return callback(null, true);
-      }
-
-      console.log(
-        "CORS blocked this frontend origin:",
-        origin
-      );
-
-      return callback(
-        new Error("CORS blocked this frontend origin.")
-      );
-    },
-
+    origin: true,
     credentials: true
   })
 );
@@ -82,7 +70,11 @@ app.use(
 |--------------------------------------------------------------------------
 */
 
-app.use(express.json({ limit: "1mb" }));
+app.use(
+  express.json({
+    limit: "1mb"
+  })
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -110,8 +102,8 @@ app.use(
       sameSite:
         process.env.COOKIE_SAMESITE || "lax",
 
-      // HTTP LAN deployment
-      secure: false,
+      secure:
+        process.env.NODE_ENV === "production",
 
       path: "/",
 
@@ -138,15 +130,6 @@ app.use((req, _res, next) => {
 
   next();
 });
-
-/*
-|--------------------------------------------------------------------------
-| CUSTOMER CONFIGURATION
-|--------------------------------------------------------------------------
-*/
-
-const CUSTOMER_PASSWORD =
-  process.env.CUSTOMER_PASSWORD || "123123";
 
 /*
 |--------------------------------------------------------------------------
@@ -194,19 +177,25 @@ const destroySession = (req) =>
 
 /*
 |--------------------------------------------------------------------------
-| PERSONAL INFORMATION
+| PERSONAL INFORMATION HELPERS
 |--------------------------------------------------------------------------
 */
 
 function cleanDisplayName(value) {
   let name = String(value || "").trim();
 
-  if (!name || /^(?:arms\s+customer|customer|member)$/i.test(name)) {
+  if (
+    !name ||
+    /^(?:arms\s+customer|customer|member)$/i.test(name)
+  ) {
     return null;
   }
 
   name = name
-    .replace(/^\s*(?:mr|mrs|ms|miss|dr)\.?\s*/i, "")
+    .replace(
+      /^\s*(?:mr|mrs|ms|miss|dr)\.?\s*/i,
+      ""
+    )
     .replace(/^\s*(?:kb|kg)\s*:\s*/i, "")
     .replace(/^\s*(?:kb|kg)\s+/i, "")
     .replace(/^\s*:\s*/, "")
@@ -216,33 +205,35 @@ function cleanDisplayName(value) {
   return name || null;
 }
 
-
 function firstRealName(...values) {
   for (const value of values) {
     const cleaned = cleanDisplayName(value);
+
     if (cleaned) {
       return cleaned;
     }
   }
+
   return null;
 }
-
 
 function firstValue(...values) {
   for (const value of values) {
     const text = String(value || "").trim();
-    if (text) return text;
+
+    if (text) {
+      return text;
+    }
   }
+
   return null;
 }
-
 
 function personal(live, member) {
   member = member || {};
 
   const arms =
-    live?.personalInformation ||
-    {};
+    live?.personalInformation || {};
 
   return {
     cardNo:
@@ -417,9 +408,12 @@ app.get("/health", (_req, res) => {
       "hasani-arms-customer-api",
 
     version:
-      "7.3.2",
+      "7.4.0",
 
     port,
+
+    environment:
+      process.env.NODE_ENV || "development",
 
     armsConfigured:
       Boolean(
@@ -452,10 +446,10 @@ app.get("/api/test", (_req, res) => {
       "hasani-arms-customer-api",
 
     version:
-      "7.3.2",
+      "7.4.0",
 
     message:
-      "Hasani ARMS backend is reachable from this network."
+      "Hasani ARMS backend is reachable."
   });
 });
 
@@ -468,7 +462,6 @@ app.get("/api/test", (_req, res) => {
 app.post(
   "/api/customer/login",
   async (req, res) => {
-
     const membership =
       String(
         req.body?.membership || ""
@@ -498,7 +491,6 @@ app.post(
     }
 
     try {
-
       const live =
         await getCustomerProfileFromArms(
           membership
@@ -509,12 +501,6 @@ app.post(
           membership
         );
 
-      /*
-       * Use the authoritative ARMS history response as a fallback for the
-       * customer name and expiry date. The fast profile endpoint can parse
-       * a placeholder such as "ARMS Customer" or omit expiry on some ARMS
-       * page layouts.
-       */
       const verifiedName =
         firstRealName(
           history?.name,
@@ -528,13 +514,18 @@ app.post(
           live?.name
         );
 
-      const liveExpiry = String(live?.expiryDate || "").trim();
-      const historyExpiry = String(
-        history?.expiryDate ||
-        history?.member?.expiryDate ||
-        history?.member?.expiry_date ||
-        ""
-      ).trim();
+      const liveExpiry =
+        String(
+          live?.expiryDate || ""
+        ).trim();
+
+      const historyExpiry =
+        String(
+          history?.expiryDate ||
+          history?.member?.expiryDate ||
+          history?.member?.expiry_date ||
+          ""
+        ).trim();
 
       const verifiedExpiry =
         firstValue(
@@ -550,14 +541,21 @@ app.post(
           new Error(
             "ARMS verified the membership, but a customer name was not returned."
           ),
-          { code: "ARMS_CUSTOMER_NAME_MISSING" }
+          {
+            code:
+              "ARMS_CUSTOMER_NAME_MISSING"
+          }
         );
       }
 
       const profileForPersonal = {
         ...live,
-        name: verifiedName,
-        expiryDate: verifiedExpiry
+
+        name:
+          verifiedName,
+
+        expiryDate:
+          verifiedExpiry
       };
 
       const info =
@@ -567,7 +565,6 @@ app.post(
         );
 
       req.session.customer = {
-
         membership:
           live.membership ||
           history?.membership ||
@@ -635,7 +632,7 @@ app.post(
 
       await saveSession(req);
 
-      res.json({
+      return res.json({
         ok: true,
 
         authenticated: true,
@@ -649,14 +646,11 @@ app.post(
           historyConfigured:
             Boolean(
               live.historyConfigured ??
-              process.env
-                .ARMS_HISTORY_URL_TEMPLATE
+              process.env.ARMS_HISTORY_URL_TEMPLATE
             )
         }
       });
-
     } catch (error) {
-
       console.error(
         "[CUSTOMER LOGIN] ARMS verification failed:",
         error
@@ -718,7 +712,6 @@ app.get(
   "/api/customer/me",
   requireCustomer,
   (req, res) => {
-
     res.json({
       ok: true,
 
@@ -740,9 +733,7 @@ app.get(
   "/api/customer/personal-information",
   requireCustomer,
   async (req, res) => {
-
     try {
-
       const history =
         await getMembershipHistory(
           req.session.customer.membership
@@ -767,9 +758,7 @@ app.get(
         personalInformation:
           info
       });
-
     } catch (error) {
-
       console.error(
         "[PERSONAL INFORMATION]",
         error
@@ -796,18 +785,15 @@ app.get(
   "/api/customer/dashboard",
   requireCustomer,
   (req, res) => {
-
     const customer =
       req.session.customer;
 
     res.json({
-
       ok: true,
 
       source: "ARMS",
 
       customer: {
-
         membership:
           customer.membership,
 
@@ -845,9 +831,7 @@ app.get(
   "/api/customer/purchases",
   requireCustomer,
   async (req, res) => {
-
     try {
-
       const history =
         await getMembershipHistory(
           req.session.customer.membership
@@ -860,9 +844,7 @@ app.get(
 
         ...history
       });
-
     } catch (error) {
-
       console.error(
         "[PURCHASE HISTORY]",
         error
@@ -881,24 +863,15 @@ app.get(
 
 /*
 |--------------------------------------------------------------------------
-| PURCHASE ITEM DETAILS
+| PURCHASE DETAIL
 |--------------------------------------------------------------------------
-|
-| The purchase-history endpoint returns the transaction summary.
-| When the ARMS history row contains trans_detail(...) parameters,
-| the browser can request the real receipt items only when the user
-| opens that purchase. This keeps the history page fast and avoids
-| loading unnecessary receipt details for every transaction.
-|
 */
 
 app.post(
   "/api/customer/purchase-detail",
   requireCustomer,
   async (req, res) => {
-
     try {
-
       const requestedPurchase =
         req.body?.purchase || null;
 
@@ -908,11 +881,6 @@ app.post(
         requestedPurchase?.transactionDetail ||
         null;
 
-      /*
-       * First use details already attached to the purchase history row.
-       * This is especially useful on mobile where the browser may have
-       * loaded a compact/cached history response.
-       */
       const existingDetail =
         requestedPurchase?.detail ||
         requestedPurchase?.transactionDetailData ||
@@ -920,23 +888,21 @@ app.post(
 
       if (
         existingDetail &&
-        Array.isArray(existingDetail.items) &&
+        Array.isArray(
+          existingDetail.items
+        ) &&
         existingDetail.items.length
       ) {
         return res.json({
           ok: true,
+
           source: "ARMS",
-          detail: existingDetail
+
+          detail:
+            existingDetail
         });
       }
 
-      /*
-       * If the browser did not receive trans_detail(...) arguments, reload
-       * the authenticated ARMS history on the server and find the exact
-       * receipt. This removes the desktop/mobile difference caused by a
-       * client relying on whatever transaction fields happened to be in its
-       * cached purchase object.
-       */
       if (!transaction) {
         const membership =
           req.session.customer.membership;
@@ -947,69 +913,88 @@ app.post(
           );
 
         const purchases =
-          Array.isArray(history?.purchases)
+          Array.isArray(
+            history?.purchases
+          )
             ? history.purchases
             : [];
 
-        const requestedReceipt = String(
-          requestedPurchase?.receiptNo ??
-          requestedPurchase?.receipt_no ??
-          ""
-        ).trim();
-
-        const requestedReference = String(
-          requestedPurchase?.receiptRefNo ??
-          requestedPurchase?.receipt_ref_no ??
-          ""
-        ).trim();
-
-        const requestedDate = String(
-          requestedPurchase?.date ??
-          requestedPurchase?.transaction_time ??
-          ""
-        ).trim();
-
-        const exact = purchases.find(function (item) {
-          const receipt = String(
-            item?.receiptNo ??
-            item?.receipt_no ??
+        const requestedReceipt =
+          String(
+            requestedPurchase?.receiptNo ??
+            requestedPurchase?.receipt_no ??
             ""
           ).trim();
 
-          const reference = String(
-            item?.receiptRefNo ??
-            item?.receipt_ref_no ??
+        const requestedReference =
+          String(
+            requestedPurchase?.receiptRefNo ??
+            requestedPurchase?.receipt_ref_no ??
             ""
           ).trim();
 
-          const date = String(
-            item?.date ??
-            item?.transaction_time ??
+        const requestedDate =
+          String(
+            requestedPurchase?.date ??
+            requestedPurchase?.transaction_time ??
             ""
           ).trim();
 
-          if (requestedReceipt && receipt === requestedReceipt) {
-            return true;
-          }
+        const exact =
+          purchases.find(
+            function (item) {
+              const receipt =
+                String(
+                  item?.receiptNo ??
+                  item?.receipt_no ??
+                  ""
+                ).trim();
 
-          if (
-            requestedReference &&
-            reference === requestedReference
-          ) {
-            return true;
-          }
+              const reference =
+                String(
+                  item?.receiptRefNo ??
+                  item?.receipt_ref_no ??
+                  ""
+                ).trim();
 
-          return Boolean(
-            requestedDate &&
-            date === requestedDate
+              const date =
+                String(
+                  item?.date ??
+                  item?.transaction_time ??
+                  ""
+                ).trim();
+
+              if (
+                requestedReceipt &&
+                receipt === requestedReceipt
+              ) {
+                return true;
+              }
+
+              if (
+                requestedReference &&
+                reference === requestedReference
+              ) {
+                return true;
+              }
+
+              return Boolean(
+                requestedDate &&
+                date === requestedDate
+              );
+            }
           );
-        });
 
-        if (exact?.detail?.items?.length) {
+        if (
+          exact?.detail?.items?.length
+        ) {
           return res.json({
             ok: true,
+
             source: "ARMS",
-            detail: exact.detail
+
+            detail:
+              exact.detail
           });
         }
 
@@ -1028,35 +1013,47 @@ app.post(
       ];
 
       const missing =
-        required.filter(function (field) {
-          return (
-            transaction?.[field] === undefined ||
-            transaction?.[field] === null ||
-            String(transaction[field]).trim() === ""
-          );
-        });
+        required.filter(
+          function (field) {
+            return (
+              transaction?.[field] ===
+                undefined ||
+              transaction?.[field] ===
+                null ||
+              String(
+                transaction[field]
+              ).trim() === ""
+            );
+          }
+        );
 
       if (missing.length) {
         return res.status(422).json({
           ok: false,
-          code: "TRANSACTION_FIELDS_MISSING",
+
+          code:
+            "TRANSACTION_FIELDS_MISSING",
+
           error:
             "ARMS did not return enough transaction-detail information for this receipt yet.",
+
           missing
         });
       }
 
       const detail =
-        await getTransactionDetail(transaction);
+        await getTransactionDetail(
+          transaction
+        );
 
       return res.json({
         ok: true,
+
         source: "ARMS",
+
         detail
       });
-
     } catch (error) {
-
       console.error(
         "[PURCHASE DETAIL]",
         error
@@ -1064,9 +1061,11 @@ app.post(
 
       return res.status(502).json({
         ok: false,
+
         code:
           error?.code ||
           "ARMS_TRANSACTION_DETAIL_ERROR",
+
         error:
           error?.message ||
           "Unable to load item-level purchase details from ARMS."
@@ -1085,9 +1084,7 @@ app.get(
   "/api/customer/card-visuals",
   requireCustomer,
   async (req, res) => {
-
     try {
-
       const membership =
         req.session.customer.membership;
 
@@ -1097,13 +1094,13 @@ app.get(
             membership,
           {
             margin: 1,
+
             width: 260
           }
         );
 
       const png =
         await bwipjs.toBuffer({
-
           bcid:
             "code128",
 
@@ -1124,7 +1121,6 @@ app.get(
         });
 
       res.json({
-
         ok: true,
 
         qrDataUrl:
@@ -1134,11 +1130,8 @@ app.get(
           "data:image/png;base64," +
           png.toString("base64")
       });
-
     } catch (error) {
-
       res.status(500).json({
-
         ok: false,
 
         error:
@@ -1159,11 +1152,8 @@ app.post(
   "/api/customer/logout",
   requireCustomer,
   async (req, res) => {
-
     try {
-
       await destroySession(req);
-
     } catch {
       // Session may already be destroyed.
     }
@@ -1177,7 +1167,9 @@ app.post(
           process.env.COOKIE_SAMESITE ||
           "lax",
 
-        secure: false,
+        secure:
+          process.env.NODE_ENV ===
+          "production",
 
         path: "/"
       }
@@ -1193,14 +1185,8 @@ app.post(
 
 /*
 |--------------------------------------------------------------------------
-| SERVE FRONTEND
+| STATIC FRONTEND
 |--------------------------------------------------------------------------
-|
-| C:\123\web\index.html
-|
-| /web/index.html
-|     -> C:\123\web\index.html
-|
 */
 
 app.use(
@@ -1212,16 +1198,11 @@ app.use(
 |--------------------------------------------------------------------------
 | ROOT FRONTEND
 |--------------------------------------------------------------------------
-|
-| http://192.168.0.59:5000
-|     -> C:\123\web\index.html
-|
 */
 
 app.get(
   "/",
   (_req, res) => {
-
     res.sendFile(
       path.join(
         webPath,
@@ -1239,9 +1220,7 @@ app.get(
 
 app.use(
   (req, res) => {
-
     res.status(404).json({
-
       ok: false,
 
       error:
@@ -1266,14 +1245,13 @@ app.listen(
   port,
   "0.0.0.0",
   () => {
-
     console.log("");
     console.log(
       "=================================================="
     );
 
     console.log(
-      " Hasani ARMS Customer API 7.3.3"
+      " Hasani ARMS Customer API 7.4.0"
     );
 
     console.log(
@@ -1281,23 +1259,22 @@ app.listen(
     );
 
     console.log(
-      ` Local:    http://localhost:${port}`
+      ` Port: ${port}`
     );
 
     console.log(
-      ` LAN:      http://192.168.0.59:${port}`
+      ` Environment: ${
+        process.env.NODE_ENV ||
+        "development"
+      }`
     );
 
     console.log(
-      ` Health:   http://192.168.0.59:${port}/health`
+      " Health: /health"
     );
 
     console.log(
-      ` Test:     http://192.168.0.59:${port}/api/test`
-    );
-
-    console.log(
-      ` Frontend: http://192.168.0.59:${port}/`
+      " Test: /api/test"
     );
 
     console.log(
