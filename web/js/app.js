@@ -2,12 +2,9 @@
    HASANI BOOKS CUSTOMER WEB APP
    COMPLETE UPDATED APP.JS
    ============================================================ */
-
 const API = (
-  new URLSearchParams(
-    window.location.search
-  ).get("api") ||
-  `${window.location.protocol}//${window.location.hostname}:5000`
+  new URLSearchParams(window.location.search).get("api") ||
+  window.location.origin
 ).replace(/\/$/, "");
 
 const APP_VERSION =
