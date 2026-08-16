@@ -5,16 +5,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   /*
-   * HASANI ARMS CUSTOMER APP
+   * ============================================================
+   * HASANI ARMS API SERVICE
+   * ============================================================
    *
-   * Production backend:
+   * Production APK:
+   *
    * https://hasaniarms.onrender.com
    *
-   * The Android APK will use this server automatically.
+   * GitHub Actions supplies:
    *
-   * You can still override it during development with:
+   * --dart-define=API_BASE_URL=https://hasaniarms.onrender.com
    *
-   * --dart-define=API_BASE_URL=https://example.com
+   * IMPORTANT:
+   * localhost / 192.168.x.x must NOT be used in the production APK.
    */
 
   final String baseUrl;
@@ -28,12 +32,6 @@ class ApiService {
               ),
         );
 
-  /*
-   |--------------------------------------------------------------------------
-   | NORMALIZE URL
-   |--------------------------------------------------------------------------
-   */
-
   static String _normalizeBaseUrl(String value) {
     var url = value.trim();
 
@@ -44,51 +42,40 @@ class ApiService {
     return url;
   }
 
-  /*
-   |--------------------------------------------------------------------------
-   | SESSION COOKIE
-   |--------------------------------------------------------------------------
-   */
+  // ============================================================
+  // SESSION COOKIE
+  // ============================================================
 
   Future<String?> _getCookie() async {
-    final prefs =
-        await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
-    return prefs.getString(
-      'hasani_session_cookie',
-    );
+    return prefs.getString('hasani_session_cookie');
   }
 
-  Future<void> _saveCookie(
-    http.Response response,
-  ) async {
-    final setCookie =
-        response.headers['set-cookie'];
+  Future<void> _saveCookie(http.Response response) async {
+    final setCookie = response.headers['set-cookie'];
 
-    if (setCookie == null ||
-        setCookie.isEmpty) {
+    if (setCookie == null || setCookie.isEmpty) {
       return;
     }
 
     /*
-     * We only need the first cookie pair.
-     *
      * Example:
      *
-     * hasani_customer_sid=something
-     * ; Path=/
-     * ; HttpOnly
+     * connect.sid=xxxxx; Path=/; HttpOnly; Secure
+     *
+     * We only store:
+     *
+     * connect.sid=xxxxx
      */
 
-    final cookie =
-        setCookie.split(';').first.trim();
+    final cookie = setCookie.split(';').first.trim();
 
     if (cookie.isEmpty) {
       return;
     }
 
-    final prefs =
-        await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
     await prefs.setString(
       'hasani_session_cookie',
@@ -96,175 +83,189 @@ class ApiService {
     );
   }
 
-  /*
-   |--------------------------------------------------------------------------
-   | GET
-   |--------------------------------------------------------------------------
-   */
+  // ============================================================
+  // COMMON HEADERS
+  // ============================================================
 
-  Future<Map<String, dynamic>> get(
-    String path,
-  ) async {
-    final headers =
-        <String, String>{
-      'Accept':
-          'application/json',
+  Future<Map<String, String>> _headers({
+    bool json = false,
+  }) async {
+    final headers = <String, String>{
+      'Accept': 'application/json',
     };
 
-    final cookie =
-        await _getCookie();
+    if (json) {
+      headers['Content-Type'] = 'application/json';
+    }
 
-    if (cookie != null &&
-        cookie.isNotEmpty) {
+    final cookie = await _getCookie();
+
+    if (cookie != null && cookie.isNotEmpty) {
       headers['Cookie'] = cookie;
     }
 
-    final uri =
-        Uri.parse('$baseUrl$path');
+    return headers;
+  }
+
+  // ============================================================
+  // GET
+  // ============================================================
+
+  Future<Map<String, dynamic>> get(String path) async {
+    final uri = Uri.parse('$baseUrl$path');
+
+    final headers = await _headers();
+
+    http.Response response;
 
     try {
-      final response =
-          await http.get(
-        uri,
-        headers: headers,
-      );
-
-      return _decode(response);
-    } on FormatException {
-      rethrow;
-    } catch (e) {
+      response = await http
+          .get(
+            uri,
+            headers: headers,
+          )
+          .timeout(
+            const Duration(seconds: 30),
+          );
+    } on Exception catch (e) {
       throw Exception(
         'Unable to connect to Hasani server.\n\n'
         'Server: $baseUrl\n\n'
-        'Please check your internet connection '
-        'and try again.',
+        'Network error: $e',
       );
     }
+
+    /*
+     * IMPORTANT:
+     *
+     * _decode() is intentionally OUTSIDE the try/catch above.
+     *
+     * This allows us to see real HTTP errors such as:
+     *
+     * 401
+     * 403
+     * 404
+     * 500
+     * 502
+     */
+
+    return _decode(response);
   }
 
-  /*
-   |--------------------------------------------------------------------------
-   | POST
-   |--------------------------------------------------------------------------
-   */
+  // ============================================================
+  // POST
+  // ============================================================
 
   Future<Map<String, dynamic>> post(
     String path,
     Map<String, dynamic> body,
   ) async {
-    final headers =
-        <String, String>{
-      'Content-Type':
-          'application/json',
+    final uri = Uri.parse('$baseUrl$path');
 
-      'Accept':
-          'application/json',
-    };
+    final headers = await _headers(
+      json: true,
+    );
 
-    final cookie =
-        await _getCookie();
-
-    if (cookie != null &&
-        cookie.isNotEmpty) {
-      headers['Cookie'] = cookie;
-    }
-
-    final uri =
-        Uri.parse('$baseUrl$path');
+    http.Response response;
 
     try {
-      final response =
-          await http.post(
-        uri,
-        headers: headers,
-        body: jsonEncode(body),
-      );
-
+      response = await http
+          .post(
+            uri,
+            headers: headers,
+            body: jsonEncode(body),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+          );
+    } on Exception catch (e) {
       /*
-       * Save the session cookie returned
-       * by the online backend.
+       * ONLY genuine network/request failures come here.
+       *
+       * HTTP errors do NOT come here.
        */
-      await _saveCookie(response);
 
-      final data =
-          _decode(response);
-
-      /*
-       * Logout clears the local session.
-       */
-      if (path.contains(
-        '/customer/logout',
-      )) {
-        await clearSession();
-      }
-
-      return data;
-    } on FormatException {
-      rethrow;
-    } catch (e) {
       throw Exception(
         'Unable to connect to Hasani server.\n\n'
         'Server: $baseUrl\n\n'
-        'Please check your internet connection '
-        'and try again.',
+        'Network error: $e',
       );
     }
-  }
 
-  /*
-   |--------------------------------------------------------------------------
-   | DECODE SERVER RESPONSE
-   |--------------------------------------------------------------------------
-   */
+    // Save session cookie if the backend supplied one.
+    await _saveCookie(response);
 
-  Map<String, dynamic> _decode(
-    http.Response response,
-  ) {
-    Map<String, dynamic> data;
+    /*
+     * Logout should clear the local session after the request.
+     */
 
-    try {
-      final decoded =
-          jsonDecode(response.body);
+    final data = _decode(response);
 
-      if (decoded
-          is Map<String, dynamic>) {
-        data = decoded;
-      } else {
-        data = {
-          'error':
-              'Invalid server response',
-        };
-      }
-    } catch (_) {
-      data = {
-        'error':
-            response.body.isNotEmpty
-                ? response.body
-                : 'Invalid server response',
-      };
-    }
-
-    if (response.statusCode >= 400) {
-      throw Exception(
-        data['error'] ??
-            data['message'] ??
-            'Request failed '
-                '(${response.statusCode})',
-      );
+    if (path.contains('/customer/logout')) {
+      await clearSession();
     }
 
     return data;
   }
 
-  /*
-   |--------------------------------------------------------------------------
-   | CLEAR SESSION
-   |--------------------------------------------------------------------------
-   */
+  // ============================================================
+  // RESPONSE DECODER
+  // ============================================================
+
+  Map<String, dynamic> _decode(http.Response response) {
+    Map<String, dynamic> data;
+
+    try {
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is Map<String, dynamic>) {
+        data = decoded;
+      } else {
+        data = {
+          'error': 'Invalid server response',
+          'statusCode': response.statusCode,
+        };
+      }
+    } catch (_) {
+      data = {
+        'error': response.body.isNotEmpty
+            ? response.body
+            : 'Invalid server response',
+        'statusCode': response.statusCode,
+      };
+    }
+
+    // ==========================================================
+    // SUCCESS
+    // ==========================================================
+
+    if (response.statusCode >= 200 &&
+        response.statusCode < 400) {
+      return data;
+    }
+
+    // ==========================================================
+    // REAL SERVER ERROR
+    // ==========================================================
+
+    final errorMessage =
+        data['error'] ??
+        data['message'] ??
+        data['detail'] ??
+        'Request failed';
+
+    throw Exception(
+      'Hasani server returned HTTP ${response.statusCode}.\n\n'
+      '$errorMessage',
+    );
+  }
+
+  // ============================================================
+  // CLEAR SESSION
+  // ============================================================
 
   Future<void> clearSession() async {
-    final prefs =
-        await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
     await prefs.remove(
       'hasani_session_cookie',
