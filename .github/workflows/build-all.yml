@@ -25,14 +25,14 @@ jobs:
     steps:
 
       # ----------------------------------------------------------
-      # CHECKOUT
+      # CHECKOUT REPOSITORY
       # ----------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
 
       # ----------------------------------------------------------
-      # NODE.JS 20
+      # SETUP NODE.JS 20
       # ----------------------------------------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -105,31 +105,37 @@ jobs:
     steps:
 
       # ----------------------------------------------------------
-      # CHECKOUT
+      # CHECKOUT REPOSITORY
       # ----------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
 
       # ----------------------------------------------------------
-      # JAVA 17
+      # SETUP JAVA 17
+      #
+      # IMPORTANT:
+      # No Gradle cache here.
+      #
+      # The repository currently does not contain the Android
+      # Gradle project. Flutter creates it later in this workflow.
       # ----------------------------------------------------------
       - name: Setup Java 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
 
 
       # ----------------------------------------------------------
-      # FLUTTER
+      # SETUP FLUTTER
       #
-      # IMPORTANT:
-      # Cache is intentionally disabled.
+      # Cache is disabled because the previous Flutter download
+      # failed with:
       #
-      # Your previous build failed because the downloaded Flutter
-      # archive was corrupted / incomplete.
+      # tar: This does not look like a tar archive
+      #
+      # This forces a fresh Flutter download.
       # ----------------------------------------------------------
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -140,20 +146,35 @@ jobs:
 
 
       # ----------------------------------------------------------
-      # SHOW VERSIONS
+      # SHOW FLUTTER VERSION
       # ----------------------------------------------------------
       - name: Show Flutter version
         run: |
+          echo "========================================"
+          echo "Flutter version"
+          echo "========================================"
           flutter --version
 
 
+      # ----------------------------------------------------------
+      # SHOW DART VERSION
+      # ----------------------------------------------------------
       - name: Show Dart version
         run: |
+          echo "========================================"
+          echo "Dart version"
+          echo "========================================"
           dart --version
 
 
+      # ----------------------------------------------------------
+      # SHOW JAVA VERSION
+      # ----------------------------------------------------------
       - name: Show Java version
         run: |
+          echo "========================================"
+          echo "Java version"
+          echo "========================================"
           java -version
 
 
@@ -162,10 +183,20 @@ jobs:
       # ----------------------------------------------------------
       - name: Verify Flutter project
         run: |
-          echo "Checking Flutter project..."
 
-          test -f pubspec.yaml
-          test -d lib
+          echo "========================================"
+          echo "VERIFYING FLUTTER PROJECT"
+          echo "========================================"
+
+          if [ ! -f pubspec.yaml ]; then
+            echo "ERROR: pubspec.yaml not found."
+            exit 1
+          fi
+
+          if [ ! -d lib ]; then
+            echo "ERROR: lib directory not found."
+            exit 1
+          fi
 
           echo "pubspec.yaml found."
           echo "lib directory found."
@@ -173,19 +204,45 @@ jobs:
 
 
       # ----------------------------------------------------------
+      # SHOW PROJECT STRUCTURE
+      # ----------------------------------------------------------
+      - name: Show project structure
+        run: |
+
+          echo "========================================"
+          echo "PROJECT STRUCTURE"
+          echo "========================================"
+
+          echo "Root:"
+          ls -la
+
+          echo ""
+          echo "lib:"
+          ls -la lib || true
+
+          echo ""
+          echo "backend:"
+          ls -la backend || true
+
+
+      # ----------------------------------------------------------
       # PREPARE ANDROID PROJECT
       #
-      # Your GitHub repository currently does NOT contain the
+      # Your GitHub repository currently does not contain the
       # Android platform folder.
       #
-      # Flutter will generate it here automatically.
+      # Flutter will generate the Android project automatically.
       # ----------------------------------------------------------
       - name: Prepare Android project
         run: |
 
+          echo "========================================"
+          echo "PREPARING ANDROID PROJECT"
+          echo "========================================"
+
           if [ ! -f android/gradlew ]; then
 
-            echo "Android project not found."
+            echo "Android project does not exist."
             echo "Generating Android platform..."
 
             rm -rf android
@@ -195,7 +252,8 @@ jobs:
               --no-pub \
               .
 
-            echo "Android platform generated successfully."
+            echo ""
+            echo "Android project generated successfully."
 
           else
 
@@ -211,11 +269,24 @@ jobs:
       - name: Verify Android project
         run: |
 
-          echo "Verifying Android project..."
+          echo "========================================"
+          echo "VERIFYING ANDROID PROJECT"
+          echo "========================================"
 
-          test -d android
-          test -d android/app
-          test -f android/gradlew
+          if [ ! -d android ]; then
+            echo "ERROR: android directory not found."
+            exit 1
+          fi
+
+          if [ ! -d android/app ]; then
+            echo "ERROR: android/app directory not found."
+            exit 1
+          fi
+
+          if [ ! -f android/gradlew ]; then
+            echo "ERROR: android/gradlew not found."
+            exit 1
+          fi
 
           if [ -f android/settings.gradle ]; then
             echo "settings.gradle found."
@@ -226,21 +297,24 @@ jobs:
             exit 1
           fi
 
-          echo "Android project verified."
+          echo ""
+          echo "Android project verified successfully."
 
 
       # ----------------------------------------------------------
-      # ADD INTERNET PERMISSION
+      # CONFIGURE INTERNET PERMISSION
       # ----------------------------------------------------------
       - name: Configure Android Internet permission
         run: |
 
+          echo "========================================"
+          echo "CONFIGURING INTERNET PERMISSION"
+          echo "========================================"
+
           MANIFEST="android/app/src/main/AndroidManifest.xml"
 
-          echo "Checking AndroidManifest.xml..."
-
           if [ ! -f "$MANIFEST" ]; then
-            echo "ERROR: AndroidManifest.xml was not generated."
+            echo "ERROR: AndroidManifest.xml not found."
             exit 1
           fi
 
@@ -262,8 +336,37 @@ jobs:
           fi
 
 
-          echo "Final Android manifest:"
-          cat "$MANIFEST"
+      # ----------------------------------------------------------
+      # VERIFY INTERNET PERMISSION
+      # ----------------------------------------------------------
+      - name: Verify Internet permission
+        run: |
+
+          echo "========================================"
+          echo "VERIFYING INTERNET PERMISSION"
+          echo "========================================"
+
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+
+          if grep -q 'android.permission.INTERNET' "$MANIFEST"; then
+            echo "Internet permission verified."
+          else
+            echo "ERROR: Internet permission was not found."
+            exit 1
+          fi
+
+
+      # ----------------------------------------------------------
+      # DISPLAY MANIFEST
+      # ----------------------------------------------------------
+      - name: Display Android manifest
+        run: |
+
+          echo "========================================"
+          echo "ANDROID MANIFEST"
+          echo "========================================"
+
+          cat android/app/src/main/AndroidManifest.xml
 
 
       # ----------------------------------------------------------
@@ -271,6 +374,11 @@ jobs:
       # ----------------------------------------------------------
       - name: Flutter clean
         run: |
+
+          echo "========================================"
+          echo "FLUTTER CLEAN"
+          echo "========================================"
+
           flutter clean
 
 
@@ -279,33 +387,56 @@ jobs:
       # ----------------------------------------------------------
       - name: Get Flutter dependencies
         run: |
+
+          echo "========================================"
+          echo "GETTING FLUTTER DEPENDENCIES"
+          echo "========================================"
+
           flutter pub get
 
 
       # ----------------------------------------------------------
-      # ANALYZE APPLICATION
+      # ANALYZE FLUTTER APPLICATION
       # ----------------------------------------------------------
       - name: Analyze Flutter application
         run: |
+
+          echo "========================================"
+          echo "ANALYZING FLUTTER APPLICATION"
+          echo "========================================"
+
           flutter analyze lib
 
 
       # ----------------------------------------------------------
       # BUILD DEBUG APK
       #
-      # The APK connects to your live Render backend:
+      # IMPORTANT:
+      #
+      # The APK uses the live Render backend:
       #
       # https://hasaniarms.onrender.com
       #
-      # DO NOT use localhost.
-      # DO NOT use 192.168.x.x.
+      # DO NOT use:
+      #
+      # localhost
+      # 127.0.0.1
+      # 192.168.x.x
+      #
       # ----------------------------------------------------------
       - name: Build Debug APK
         run: |
 
-          set -o pipefail
+          echo "========================================"
+          echo "BUILDING HASANI ARMS APK"
+          echo "========================================"
 
-          echo "Building Hasani ARMS APK..."
+          echo ""
+          echo "API SERVER:"
+          echo "https://hasaniarms.onrender.com"
+          echo ""
+
+          set -o pipefail
 
           flutter build apk \
             --debug \
@@ -320,11 +451,17 @@ jobs:
       - name: Verify APK
         run: |
 
+          echo "========================================"
+          echo "VERIFYING APK"
+          echo "========================================"
+
           APK="build/app/outputs/flutter-apk/app-debug.apk"
 
           if [ ! -f "$APK" ]; then
+
             echo "ERROR: APK was not created."
             exit 1
+
           fi
 
           echo ""
@@ -336,7 +473,7 @@ jobs:
 
 
       # ----------------------------------------------------------
-      # UPLOAD APK
+      # UPLOAD DEBUG APK
       # ----------------------------------------------------------
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -347,7 +484,7 @@ jobs:
 
 
       # ----------------------------------------------------------
-      # SHOW BUILD LOG ON FAILURE
+      # SHOW BUILD LOG IF BUILD FAILS
       # ----------------------------------------------------------
       - name: Show build log on failure
         if: failure()
@@ -355,7 +492,7 @@ jobs:
 
           echo ""
           echo "========================================"
-          echo "BUILD FAILED"
+          echo "HASANI ARMS BUILD FAILED"
           echo "========================================"
 
           if [ -f build.log ]; then
@@ -368,6 +505,7 @@ jobs:
 
           else
 
+            echo ""
             echo "No build.log was created."
             echo "The failure happened before the APK build step."
 
