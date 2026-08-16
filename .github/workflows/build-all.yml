@@ -8,12 +8,11 @@
         with:
           node-version: 20
           cache: 'npm'
-          # Force setup-node to look for the lockfile in the correct path
           cache-dependency-path: 'hasaniarms/backend/package-lock.json'
+        # Fixed: Indented and placed inside the step it belongs to
+        env:
+          NODE_WORKSPACE: 'hasaniarms/backend'
 
-      # Explicitly set the environment variable so the cache path resolves correctly
-      env:
-        NODE_WORKSPACE: 'hasaniarms/backend'
       - name: Install dependencies
         run: npm ci
         working-directory: hasaniarms/backend
