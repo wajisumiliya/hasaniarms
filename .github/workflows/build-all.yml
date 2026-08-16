@@ -24,9 +24,16 @@ jobs:
 
     steps:
 
+      # ----------------------------------------------------------
+      # CHECKOUT
+      # ----------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
+
+      # ----------------------------------------------------------
+      # NODE.JS 20
+      # ----------------------------------------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -34,10 +41,18 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
 
+
+      # ----------------------------------------------------------
+      # INSTALL BACKEND DEPENDENCIES
+      # ----------------------------------------------------------
       - name: Install backend dependencies
         working-directory: backend
         run: npm ci
 
+
+      # ----------------------------------------------------------
+      # CHECK SERVER.JS
+      # ----------------------------------------------------------
       - name: Check server.js
         working-directory: backend
         run: |
@@ -47,6 +62,10 @@ jobs:
             echo "src/server.js not found - skipping"
           fi
 
+
+      # ----------------------------------------------------------
+      # CHECK ARMS.JS
+      # ----------------------------------------------------------
       - name: Check arms.js
         working-directory: backend
         run: |
@@ -56,6 +75,10 @@ jobs:
             echo "src/arms.js not found - skipping"
           fi
 
+
+      # ----------------------------------------------------------
+      # CHECK ARMS-SESSION.JS
+      # ----------------------------------------------------------
       - name: Check arms-session.js
         working-directory: backend
         run: |
@@ -103,11 +126,15 @@ jobs:
 
 
       # ----------------------------------------------------------
-      # SHOW VERSIONS
+      # SHOW FLUTTER VERSION
       # ----------------------------------------------------------
       - name: Flutter version
         run: flutter --version
 
+
+      # ----------------------------------------------------------
+      # SHOW JAVA VERSION
+      # ----------------------------------------------------------
       - name: Java version
         run: java -version
 
@@ -120,19 +147,29 @@ jobs:
           test -f pubspec.yaml
           test -d lib
 
+          echo "========================================"
           echo "Flutter project found."
           echo "pubspec.yaml found."
           echo "lib folder found."
+          echo "========================================"
 
 
       # ----------------------------------------------------------
       # PREPARE ANDROID PROJECT
+      #
+      # The repository currently does not contain an Android
+      # platform folder.
+      #
+      # Therefore GitHub Actions generates it automatically.
       # ----------------------------------------------------------
       - name: Prepare Android project
         run: |
           if [ ! -f android/gradlew ]; then
+
+            echo "========================================"
             echo "Android project is incomplete."
             echo "Generating Android platform..."
+            echo "========================================"
 
             rm -rf android
 
@@ -141,11 +178,49 @@ jobs:
               --no-pub \
               .
 
+            echo "========================================"
             echo "Android project generated."
+            echo "========================================"
+
           else
+
+            echo "========================================"
             echo "Android Gradle wrapper already exists."
             echo "Using existing Android project."
+            echo "========================================"
+
           fi
+
+
+      # ----------------------------------------------------------
+      # CONFIGURE ANDROID INTERNET PERMISSION
+      #
+      # The customer APK must connect to the Render backend.
+      # ----------------------------------------------------------
+      - name: Configure Android Internet permission
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+
+          echo "Checking AndroidManifest.xml..."
+
+          if [ ! -f "$MANIFEST" ]; then
+            echo "ERROR: AndroidManifest.xml not found."
+            exit 1
+          fi
+
+          if grep -q 'android.permission.INTERNET' "$MANIFEST"; then
+
+            echo "Internet permission already exists."
+
+          else
+
+            sed -i '/<manifest /a\    <uses-permission android:name="android.permission.INTERNET"/>' "$MANIFEST"
+
+            echo "Internet permission added."
+
+          fi
+
+          echo "Android manifest configured."
 
 
       # ----------------------------------------------------------
@@ -153,48 +228,90 @@ jobs:
       # ----------------------------------------------------------
       - name: Verify Android project
         run: |
+
           test -d android
+
           test -f android/gradlew
-          test -f android/settings.gradle || test -f android/settings.gradle.kts
+
+          test -f android/settings.gradle || \
+          test -f android/settings.gradle.kts
+
           test -d android/app
 
+          test -f android/app/src/main/AndroidManifest.xml
+
+          echo "========================================"
           echo "Android project verified."
+          echo "AndroidManifest.xml verified."
+          echo "========================================"
+
+
+      # ----------------------------------------------------------
+      # SHOW ANDROID MANIFEST
+      # ----------------------------------------------------------
+      - name: Verify Internet permission
+        run: |
+
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+
+          if grep -q 'android.permission.INTERNET' "$MANIFEST"; then
+
+            echo "========================================"
+            echo "INTERNET PERMISSION FOUND"
+            echo "========================================"
+
+          else
+
+            echo "ERROR: INTERNET permission is missing."
+            exit 1
+
+          fi
 
 
       # ----------------------------------------------------------
       # FLUTTER CLEAN
       # ----------------------------------------------------------
       - name: Flutter clean
-        run: flutter clean
+        run: |
+          flutter clean
 
 
       # ----------------------------------------------------------
-      # GET DEPENDENCIES
+      # GET FLUTTER DEPENDENCIES
       # ----------------------------------------------------------
       - name: Get Flutter dependencies
-        run: flutter pub get
+        run: |
+          flutter pub get
 
 
       # ----------------------------------------------------------
-      # ANALYZE ONLY APPLICATION CODE
-      #
-      # We intentionally analyze lib/ instead of the default
-      # test/widget_test.dart because the generated test may not
-      # match the current Flutter project.
+      # ANALYZE FLUTTER APPLICATION
       # ----------------------------------------------------------
       - name: Analyze Flutter application
-        run: flutter analyze lib
+        run: |
+          flutter analyze lib
 
 
       # ----------------------------------------------------------
       # BUILD DEBUG APK
+      #
+      # IMPORTANT:
+      #
+      # The APK connects to:
+      #
+      # https://hasaniarms.onrender.com
+      #
+      # NOT localhost.
+      # NOT 192.168.x.x.
       # ----------------------------------------------------------
       - name: Build Debug APK
         run: |
+
           set -o pipefail
 
           flutter build apk \
             --debug \
+            --dart-define=API_BASE_URL=https://hasaniarms.onrender.com \
             --verbose \
             2>&1 | tee build.log
 
@@ -204,14 +321,18 @@ jobs:
       # ----------------------------------------------------------
       - name: Verify APK
         run: |
+
           test -f build/app/outputs/flutter-apk/app-debug.apk
 
-          echo "APK successfully created."
+          echo "========================================"
+          echo "APK SUCCESSFULLY CREATED"
+          echo "========================================"
+
           ls -lh build/app/outputs/flutter-apk/app-debug.apk
 
 
       # ----------------------------------------------------------
-      # UPLOAD APK
+      # UPLOAD DEBUG APK
       # ----------------------------------------------------------
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -227,12 +348,18 @@ jobs:
       - name: Show build log on failure
         if: failure()
         run: |
+
           if [ -f build.log ]; then
+
             echo "========================================"
             echo "LAST 250 LINES OF BUILD LOG"
             echo "========================================"
+
             tail -n 250 build.log
+
           else
+
             echo "No build.log was created."
             echo "The failure happened before the APK build step."
+
           fi
