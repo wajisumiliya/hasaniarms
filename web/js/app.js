@@ -1,6 +1,6 @@
 /* ============================================================
-   HASANI CUSTOMER WEB APP
-   FINAL MEMBER 2 CSS VERSION
+   HASANI BOOKS CUSTOMER WEB APP
+   COMPLETE UPDATED APP.JS
    ============================================================ */
 
 const API = (
@@ -10,6 +10,8 @@ const API = (
   `${window.location.protocol}//${window.location.hostname}:5000`
 ).replace(/\/$/, "");
 
+const APP_VERSION =
+  "20260817-MEMBER2-TEACHER-CARD";
 
 const state = {
   customer: null,
@@ -19,7 +21,7 @@ const state = {
 
 
 /* ============================================================
-   DOM HELPERS
+   DOM
    ============================================================ */
 
 function $(id) {
@@ -67,28 +69,20 @@ function showLogin(message) {
   clearState();
 
   if ($("loginPage")) {
-
     $("loginPage")
       .classList
       .remove("hidden");
-
   }
 
-
   if ($("appShell")) {
-
     $("appShell")
       .classList
       .add("hidden");
-
   }
 
-
   if ($("loginMessage")) {
-
     $("loginMessage").textContent =
       message || "";
-
   }
 
 }
@@ -97,20 +91,15 @@ function showLogin(message) {
 function showApp() {
 
   if ($("loginPage")) {
-
     $("loginPage")
       .classList
       .add("hidden");
-
   }
 
-
   if ($("appShell")) {
-
     $("appShell")
       .classList
       .remove("hidden");
-
   }
 
 }
@@ -128,18 +117,14 @@ async function request(
   const config =
     options || {};
 
-
   const fetchOptions = {
-
     method:
       config.method ||
       "GET",
 
     credentials:
       "include"
-
   };
-
 
   if (
     config.body !== undefined
@@ -150,14 +135,12 @@ async function request(
 
   }
 
-
   fetchOptions.headers =
     config.headers
       ? {
           ...config.headers
         }
       : {};
-
 
   if (
     config.body !== undefined &&
@@ -172,9 +155,7 @@ async function request(
 
   }
 
-
   let response;
-
 
   try {
 
@@ -194,13 +175,10 @@ async function request(
 
   }
 
-
   const text =
     await response.text();
 
-
   let data = {};
-
 
   if (text) {
 
@@ -219,6 +197,26 @@ async function request(
 
   }
 
+  if (
+    response.status === 401 &&
+    path !== "/api/customer/login"
+  ) {
+
+    const error =
+      new Error(
+        "Customer session expired. Please log in again."
+      );
+
+    error.code =
+      "CUSTOMER_SESSION_EXPIRED";
+
+    showLogin(
+      error.message
+    );
+
+    throw error;
+
+  }
 
   if (!response.ok) {
 
@@ -230,14 +228,13 @@ async function request(
 
   }
 
-
   return data;
 
 }
 
 
 /* ============================================================
-   CUSTOMER NAME CLEANING
+   NAME CLEANING
    ============================================================ */
 
 function cleanMemberName(
@@ -258,13 +255,9 @@ function cleanMemberName(
       )
       .trim();
 
-
   if (!name) {
-
     return "";
-
   }
-
 
   if (
     /^arms\s+customer$/i.test(
@@ -276,25 +269,7 @@ function cleanMemberName(
 
   }
 
-
-  /*
-   * Remove prefixes repeatedly.
-   *
-   * Examples:
-   *
-   * MR: NAME
-   * MRS: NAME
-   * MR KB: NAME
-   * MRS KG: NAME
-   * S KB: NAME
-   * S KG: NAME
-   * KB: NAME
-   * KG: NAME
-   * : NAME
-   */
-
   let previous = "";
-
 
   while (
     previous !== name
@@ -303,20 +278,17 @@ function cleanMemberName(
     previous =
       name;
 
-
     name =
       name.replace(
         /^(?:MR|MRS|MS|MISS|DR|PROF)\.?\s*:?\s*/i,
         ""
       );
 
-
     name =
       name.replace(
-        /^(?:S|MR|MRS|MS|MISS|DR|PROF)\s+(?:KB|KG)\s*:?\s*/i,
+        /^(?:S)\s+(?:KB|KG)\s*:?\s*/i,
         ""
       );
-
 
     name =
       name.replace(
@@ -324,41 +296,16 @@ function cleanMemberName(
         ""
       );
 
-
     name =
       name.replace(
         /^:\s*/i,
         ""
       );
 
-
     name =
       name.trim();
 
   }
-
-
-  /*
-   * Remove prefixes occurring after another
-   * title such as:
-   *
-   * S KB:
-   * S KG:
-   */
-
-  name =
-    name.replace(
-      /^(?:S\s+)?(?:KB|KG)\s*:?\s*/i,
-      ""
-    );
-
-
-  name =
-    name.replace(
-      /^:\s*/,
-      ""
-    );
-
 
   return name.trim();
 
@@ -366,7 +313,7 @@ function cleanMemberName(
 
 
 /* ============================================================
-   PERSONAL INFORMATION
+   CUSTOMER NAME
    ============================================================ */
 
 function getPersonalInformation() {
@@ -388,11 +335,9 @@ function getBestCustomerName(
     customer ||
     {};
 
-
   personal =
     personal ||
     {};
-
 
   const candidates = [
 
@@ -420,7 +365,6 @@ function getBestCustomerName(
 
   ];
 
-
   for (
     const candidate of candidates
   ) {
@@ -429,7 +373,6 @@ function getBestCustomerName(
       cleanMemberName(
         candidate
       );
-
 
     if (
       cleaned
@@ -440,7 +383,6 @@ function getBestCustomerName(
     }
 
   }
-
 
   return "";
 
@@ -457,10 +399,8 @@ function getCustomerExpiry() {
     state.customer ||
     {};
 
-
   const personal =
     getPersonalInformation();
-
 
   return (
 
@@ -489,10 +429,8 @@ function getCustomerIssueBranch() {
     state.customer ||
     {};
 
-
   const personal =
     getPersonalInformation();
-
 
   return (
 
@@ -531,10 +469,8 @@ function getCustomerMembershipType() {
     state.customer ||
     {};
 
-
   const personal =
     getPersonalInformation();
-
 
   return String(
 
@@ -581,7 +517,6 @@ function isMember2() {
       )
       .trim();
 
-
   return (
 
     value === "2" ||
@@ -608,1308 +543,29 @@ function isMember2() {
 
 
 /* ============================================================
-   MEMBER 2 CSS
-   ============================================================ */
-
-function installMember2CardStyles() {
-
-  if (
-    $("member2CardStyles")
-  ) {
-
-    return;
-
-  }
-
-
-  const style =
-    document.createElement(
-      "style"
-    );
-
-
-  style.id =
-    "member2CardStyles";
-
-
-  style.textContent = `
-
-    /* ========================================================
-       COMMON
-       ======================================================== */
-
-    .discount-card.member2-active {
-
-      position: relative !important;
-
-      overflow: hidden !important;
-
-      background-image: none !important;
-
-      background-color: transparent !important;
-
-      box-sizing: border-box !important;
-
-    }
-
-
-    .discount-card.member2-active
-    > * {
-
-      visibility: hidden !important;
-
-    }
-
-
-    .discount-card.member2-active
-    .member2-css-card {
-
-      visibility: visible !important;
-
-    }
-
-
-    .member2-css-card {
-
-      position: absolute !important;
-
-      inset: 0 !important;
-
-      width: 100% !important;
-
-      height: 100% !important;
-
-      overflow: hidden !important;
-
-      border-radius: inherit !important;
-
-      box-sizing: border-box !important;
-
-      font-family:
-        Arial,
-        Helvetica,
-        sans-serif !important;
-
-    }
-
-
-    /* ========================================================
-       FRONT
-       ======================================================== */
-
-    .member2-css-front {
-
-      color: #ffffff;
-
-      background:
-        linear-gradient(
-          115deg,
-          #302c54 0%,
-          #47456d 48%,
-          #77789b 100%
-        );
-
-    }
-
-
-    .member2-front-top {
-
-      position: absolute;
-
-      left: 0;
-
-      right: 0;
-
-      top: 0;
-
-      height: 60%;
-
-      background:
-        linear-gradient(
-          115deg,
-          #29254c 0%,
-          #454267 50%,
-          #68698e 100%
-        );
-
-    }
-
-
-    .member2-front-bottom {
-
-      position: absolute;
-
-      left: 0;
-
-      right: 0;
-
-      bottom: 0;
-
-      height: 47%;
-
-      background:
-        linear-gradient(
-          100deg,
-          #d7d7e1 0%,
-          #efeff4 100%
-        );
-
-      clip-path:
-        polygon(
-          0 25%,
-          40% 25%,
-          46% 0,
-          100% 0,
-          100% 100%,
-          0 100%
-        );
-
-    }
-
-
-    .member2-front-transition {
-
-      position: absolute;
-
-      left: 0;
-
-      right: 0;
-
-      top: 51%;
-
-      height: 9%;
-
-      background:
-        rgba(
-          201,
-          201,
-          220,
-          .75
-        );
-
-      clip-path:
-        polygon(
-          0 0,
-          41% 0,
-          47% 100%,
-          0 100%
-        );
-
-    }
-
-
-    /* ========================================================
-       FRONT LOGO
-       ======================================================== */
-
-    .member2-front-logo {
-
-      position: absolute;
-
-      left: 5%;
-
-      top: 7%;
-
-      line-height: .82;
-
-      letter-spacing: -2px;
-
-      white-space: nowrap;
-
-      font-weight: 900;
-
-    }
-
-
-    .member2-logo-hasani {
-
-      color: #ffffff;
-
-      font-size:
-        clamp(
-          22px,
-          4.1vw,
-          58px
-        );
-
-    }
-
-
-    .member2-logo-books {
-
-      color: #ffffff;
-
-      font-size:
-        clamp(
-          22px,
-          4.1vw,
-          58px
-        );
-
-    }
-
-
-    .member2-front-title {
-
-      position: absolute;
-
-      left: 5%;
-
-      top: 29%;
-
-      color: #ffffff;
-
-      font-size:
-        clamp(
-          11px,
-          1.45vw,
-          21px
-        );
-
-      font-weight: 800;
-
-      letter-spacing: .2px;
-
-      white-space: nowrap;
-
-    }
-
-
-    /* ========================================================
-       FRONT DATA
-       ======================================================== */
-
-    .member2-front-info {
-
-      position: absolute;
-
-      left: 7%;
-
-      right: 7%;
-
-      bottom: 7%;
-
-      height: 31%;
-
-      display: grid;
-
-      grid-template-columns:
-        1.5fr
-        .75fr
-        .85fr;
-
-      grid-template-rows:
-        auto
-        auto
-        auto;
-
-      column-gap: 4%;
-
-      row-gap: 7%;
-
-      align-items: end;
-
-      color: #171a36;
-
-    }
-
-
-    .member2-field {
-
-      min-width: 0;
-
-    }
-
-
-    .member2-field-name {
-
-      grid-column:
-        1 / 3;
-
-      grid-row:
-        1;
-
-    }
-
-
-    .member2-field-expiry {
-
-      grid-column:
-        3;
-
-      grid-row:
-        1;
-
-    }
-
-
-    .member2-field-id {
-
-      grid-column:
-        1;
-
-      grid-row:
-        2;
-
-    }
-
-
-    .member2-field-branch {
-
-      grid-column:
-        1 / 3;
-
-      grid-row:
-        3;
-
-    }
-
-
-    .member2-field label {
-
-      display: block;
-
-      margin-bottom: 2px;
-
-      color: #57586b;
-
-      font-size:
-        clamp(
-          6px,
-          .78vw,
-          10px
-        );
-
-      line-height: 1;
-
-      font-weight: 800;
-
-      letter-spacing: .3px;
-
-    }
-
-
-    .member2-field strong {
-
-      display: block;
-
-      color: #161a35;
-
-      font-size:
-        clamp(
-          9px,
-          1.12vw,
-          15px
-        );
-
-      line-height: 1.05;
-
-      font-weight: 900;
-
-      white-space: nowrap;
-
-      overflow: hidden;
-
-      text-overflow: ellipsis;
-
-    }
-
-
-    .member2-field-name strong {
-
-      font-size:
-        clamp(
-          12px,
-          1.45vw,
-          20px
-        );
-
-    }
-
-
-    /* ========================================================
-       FRONT BARCODE
-       ======================================================== */
-
-    .member2-front-barcode {
-
-      position: absolute;
-
-      right: 6.5%;
-
-      bottom: 6.5%;
-
-      width: 24%;
-
-      height: 24%;
-
-      background: #ffffff;
-
-      border-radius: 3px;
-
-      padding: 3px;
-
-      box-sizing: border-box;
-
-      display: flex;
-
-      align-items: center;
-
-      justify-content: center;
-
-    }
-
-
-    .member2-front-barcode img {
-
-      width: 100%;
-
-      height: 100%;
-
-      object-fit: contain;
-
-    }
-
-
-    /* ========================================================
-       BACK
-       ======================================================== */
-
-    .member2-css-back {
-
-      color: #ffffff;
-
-      background:
-        linear-gradient(
-          115deg,
-          #403b5d 0%,
-          #575477 48%,
-          #74799e 100%
-        );
-
-    }
-
-
-    .member2-back-gradient {
-
-      position: absolute;
-
-      inset: 0;
-
-      background:
-        radial-gradient(
-          circle at 90% 5%,
-          rgba(
-            121,
-            150,
-            211,
-            .42
-          ),
-          transparent 43%
-        ),
-        linear-gradient(
-          115deg,
-          #403b5d 0%,
-          #575477 48%,
-          #74799e 100%
-        );
-
-    }
-
-
-    /* ========================================================
-       BACK SOCIAL
-       ======================================================== */
-
-    .member2-back-social {
-
-      position: absolute;
-
-      left: 5.5%;
-
-      top: 5%;
-
-      display: flex;
-
-      align-items: center;
-
-      gap: 3px;
-
-      color: #ffffff;
-
-      font-size:
-        clamp(
-          6px,
-          .7vw,
-          10px
-        );
-
-      font-weight: 700;
-
-      white-space: nowrap;
-
-    }
-
-
-    .member2-social-box {
-
-      display: inline-flex;
-
-      align-items: center;
-
-      justify-content: center;
-
-      width:
-        clamp(
-          11px,
-          1.2vw,
-          16px
-        );
-
-      height:
-        clamp(
-          11px,
-          1.2vw,
-          16px
-        );
-
-      border:
-        1px solid
-        rgba(
-          255,
-          255,
-          255,
-          .85
-        );
-
-      border-radius: 2px;
-
-      font-size:
-        clamp(
-          6px,
-          .65vw,
-          9px
-        );
-
-    }
-
-
-    .member2-phone {
-
-      margin-left: 3px;
-
-    }
-
-
-    /* ========================================================
-       BACK LOGO
-       ======================================================== */
-
-    .member2-back-logo {
-
-      position: absolute;
-
-      right: 5%;
-
-      top: 4%;
-
-      width: 25%;
-
-      height: 14%;
-
-      display: flex;
-
-      align-items: center;
-
-      justify-content: center;
-
-      background: #ffffff;
-
-      border-radius: 2px;
-
-    }
-
-
-    .member2-back-logo-text {
-
-      white-space: nowrap;
-
-      font-size:
-        clamp(
-          10px,
-          1.45vw,
-          20px
-        );
-
-      font-weight: 900;
-
-      letter-spacing: -1px;
-
-    }
-
-
-    .member2-back-logo-text
-    .hasani {
-
-      color: #283c91;
-
-    }
-
-
-    .member2-back-logo-text
-    .books {
-
-      color: #ed2636;
-
-    }
-
-
-    /* ========================================================
-       BACK TERMS
-       ======================================================== */
-
-    .member2-back-terms {
-
-      position: absolute;
-
-      left: 5.5%;
-
-      right: 10%;
-
-      top: 21%;
-
-      bottom: 17%;
-
-      display: flex;
-
-      flex-direction: column;
-
-      justify-content: space-between;
-
-    }
-
-
-    .member2-back-rule {
-
-      padding-bottom: 3px;
-
-      border-bottom:
-        1px dotted
-        rgba(
-          255,
-          255,
-          255,
-          .78
-        );
-
-      color: #ffffff;
-
-      font-size:
-        clamp(
-          6px,
-          .78vw,
-          10px
-        );
-
-      line-height: 1.15;
-
-      font-weight: 500;
-
-    }
-
-
-    /* ========================================================
-       BACK VERTICAL STRIP
-       ======================================================== */
-
-    .member2-back-strip {
-
-      position: absolute;
-
-      right: 0;
-
-      top: 23%;
-
-      bottom: 17%;
-
-      width: 6.5%;
-
-      background: #e76b79;
-
-      color: #ffffff;
-
-      display: flex;
-
-      align-items: center;
-
-      justify-content: center;
-
-      writing-mode: vertical-rl;
-
-      transform:
-        rotate(180deg);
-
-      font-size:
-        clamp(
-          6px,
-          .72vw,
-          10px
-        );
-
-      font-weight: 800;
-
-      letter-spacing: .2px;
-
-    }
-
-
-    /* ========================================================
-       BACK FOOTER
-       ======================================================== */
-
-    .member2-back-footer {
-
-      position: absolute;
-
-      left: 0;
-
-      right: 0;
-
-      bottom: 0;
-
-      min-height: 14%;
-
-      padding:
-        3px 8% 3px 5.5%;
-
-      box-sizing: border-box;
-
-      border-top:
-        1px solid
-        rgba(
-          255,
-          255,
-          255,
-          .45
-        );
-
-      display: flex;
-
-      flex-direction: column;
-
-      justify-content: center;
-
-      color: #ffffff;
-
-      font-size:
-        clamp(
-          5.5px,
-          .68vw,
-          9px
-        );
-
-      line-height: 1.1;
-
-      font-weight: 700;
-
-    }
-
-
-    /* ========================================================
-       MOBILE
-       ======================================================== */
-
-    @media (
-      max-width: 700px
-    ) {
-
-      .member2-front-logo {
-
-        top: 7%;
-
-      }
-
-
-      .member2-front-title {
-
-        top: 30%;
-
-      }
-
-
-      .member2-front-info {
-
-        left: 7%;
-
-        right: 7%;
-
-        bottom: 7%;
-
-      }
-
-
-      .member2-field label {
-
-        font-size: 6px;
-
-      }
-
-
-      .member2-field strong {
-
-        font-size: 8px;
-
-      }
-
-
-      .member2-field-name strong {
-
-        font-size: 10px;
-
-      }
-
-
-      .member2-back-rule {
-
-        font-size: 5.5px;
-
-      }
-
-
-      .member2-back-social {
-
-        font-size: 5.5px;
-
-      }
-
-
-      .member2-back-logo-text {
-
-        font-size: 8px;
-
-      }
-
-
-      .member2-back-footer {
-
-        font-size: 5.5px;
-
-      }
-
-    }
-
-  `;
-
-
-  document.head.appendChild(
-    style
-  );
-
-}
-
-
-/* ============================================================
-   CREATE MEMBER 2 FRONT
-   ============================================================ */
-
-function createMember2Front(
-  card
-) {
-
-  let element =
-    card.querySelector(
-      ".member2-css-card"
-    );
-
-
-  if (element) {
-
-    return element;
-
-  }
-
-
-  element =
-    document.createElement(
-      "div"
-    );
-
-
-  element.className =
-    "member2-css-card member2-css-front";
-
-
-  element.innerHTML = `
-
-    <div
-      class="member2-front-top"
-    ></div>
-
-
-    <div
-      class="member2-front-bottom"
-    ></div>
-
-
-    <div
-      class="member2-front-transition"
-    ></div>
-
-
-    <div
-      class="member2-front-logo"
-    >
-
-      <span
-        class="member2-logo-hasani"
-      >
-        hasani
-      </span>
-
-      <span
-        class="member2-logo-books"
-      >
-        BOOKS
-      </span>
-
-    </div>
-
-
-    <div
-      class="member2-front-title"
-    >
-      TEACHER PRIVILEGE CARD
-    </div>
-
-
-    <div
-      class="member2-front-info"
-    >
-
-      <div
-        class="member2-field
-               member2-field-name"
-      >
-
-        <label>
-          MEMBER NAME
-        </label>
-
-        <strong
-          id="member2CardName"
-        >
-          —
-        </strong>
-
-      </div>
-
-
-      <div
-        class="member2-field
-               member2-field-expiry"
-      >
-
-        <label>
-          EXPIRY DATE
-        </label>
-
-        <strong
-          id="member2CardExpiry"
-        >
-          —
-        </strong>
-
-      </div>
-
-
-      <div
-        class="member2-field
-               member2-field-id"
-      >
-
-        <label>
-          MEMBER ID
-        </label>
-
-        <strong
-          id="member2CardMember"
-        >
-          —
-        </strong>
-
-      </div>
-
-
-      <div
-        class="member2-field
-               member2-field-branch"
-      >
-
-        <label>
-          ISSUE BRANCH
-        </label>
-
-        <strong
-          id="member2CardIssueBranch"
-        >
-          —
-        </strong>
-
-      </div>
-
-    </div>
-
-
-    <div
-      class="member2-front-barcode"
-    >
-
-      <img
-        id="member2BarcodeImg"
-        alt="Membership barcode"
-      >
-
-    </div>
-
-  `;
-
-
-  card.appendChild(
-    element
-  );
-
-
-  return element;
-
-}
-
-
-/* ============================================================
-   CREATE MEMBER 2 BACK
-   ============================================================ */
-
-function createMember2Back(
-  card
-) {
-
-  let element =
-    card.querySelector(
-      ".member2-css-card"
-    );
-
-
-  if (element) {
-
-    return element;
-
-  }
-
-
-  element =
-    document.createElement(
-      "div"
-    );
-
-
-  element.className =
-    "member2-css-card member2-css-back";
-
-
-  element.innerHTML = `
-
-    <div
-      class="member2-back-gradient"
-    ></div>
-
-
-    <div
-      class="member2-back-social"
-    >
-
-      <span
-        class="member2-social-box"
-      >
-        f
-      </span>
-
-      <span
-        class="member2-social-box"
-      >
-        ◎
-      </span>
-
-      <span
-        class="member2-social-box"
-      >
-        ♪
-      </span>
-
-      <span
-        class="member2-social-box"
-      >
-        ☎
-      </span>
-
-      <strong>
-        hasaniBOOKS
-      </strong>
-
-      <span>
-        |
-      </span>
-
-      <strong
-        class="member2-phone"
-      >
-        +60 19-475 7733
-      </strong>
-
-    </div>
-
-
-    <div
-      class="member2-back-logo"
-    >
-
-      <span
-        class="member2-back-logo-text"
-      >
-
-        <span
-          class="hasani"
-        >
-          hasani
-        </span>
-
-        <span
-          class="books"
-        >
-          BOOKS
-        </span>
-
-      </span>
-
-    </div>
-
-
-    <div
-      class="member2-back-terms"
-    >
-
-      <div
-        class="member2-back-rule"
-      >
-        Kad ini bukan kad kredit.
-      </div>
-
-
-      <div
-        class="member2-back-rule"
-      >
-        Kad ini tidak boleh ditunaikan.
-      </div>
-
-
-      <div
-        class="member2-back-rule"
-      >
-        Pemilik kad ini boleh mendapat diskaun bagi buku dan alat tulis yang terpilih sahaja.
-      </div>
-
-
-      <div
-        class="member2-back-rule"
-      >
-        Sila gunakan kad ini di semua cawangan Hasani Books untuk menikmati potongan diskaun.
-      </div>
-
-
-      <div
-        class="member2-back-rule"
-      >
-        Kad ini hak milik Hasani Books.
-      </div>
-
-
-      <div
-        class="member2-back-rule"
-      >
-        Kegunaannya adalah tertakluk kepada syarat &amp; peraturan yang lazim digunakan. Jika terjumpa, sila kembalikan kad ini kepada Hasani Books.
-      </div>
-
-    </div>
-
-
-    <div
-      class="member2-back-strip"
-    >
-      TEACHER PRIVILEGE CARD
-    </div>
-
-
-    <div
-      class="member2-back-footer"
-    >
-
-      <strong>
-        Hasani Edar Sdn. Bhd.
-      </strong>
-
-      <span>
-        41A–47A, Jalan Pengkalan,
-        Taman Pekan Baru,
-      </span>
-
-      <span>
-        08000 Sungai Petani,
-        Kedah Darul Aman.
-      </span>
-
-    </div>
-
-  `;
-
-
-  card.appendChild(
-    element
-  );
-
-
-  return element;
-
-}
-
-
-/* ============================================================
-   APPLY MEMBER 2
+   MEMBER 2 CARD
    ============================================================ */
 
 function applyMember2CardDesign() {
 
-  const front =
-    document.querySelector(
-      ".discount-card.discount-front"
-    );
+  const card =
+    $("membershipCard");
 
+  const normalCard =
+    $("normalMemberCard");
 
-  const back =
-    document.querySelector(
-      ".discount-card.discount-back"
-    );
-
+  const member2Card =
+    $("member2Card");
 
   if (
-    !front ||
-    !back
+    !card ||
+    !normalCard ||
+    !member2Card
   ) {
 
     return;
 
   }
-
-
-  installMember2CardStyles();
-
 
   const active =
     isMember2();
@@ -1921,48 +577,17 @@ function applyMember2CardDesign() {
 
   if (!active) {
 
-    front.classList.remove(
+    card.classList.remove(
       "member2-active"
     );
 
-    back.classList.remove(
-      "member2-active"
+    normalCard.classList.remove(
+      "hidden"
     );
 
-
-    front.style.backgroundImage =
-      "";
-
-
-    back.style.backgroundImage =
-      "";
-
-
-    const oldFront =
-      front.querySelector(
-        ".member2-css-card"
-      );
-
-
-    if (oldFront) {
-
-      oldFront.remove();
-
-    }
-
-
-    const oldBack =
-      back.querySelector(
-        ".member2-css-card"
-      );
-
-
-    if (oldBack) {
-
-      oldBack.remove();
-
-    }
-
+    member2Card.classList.add(
+      "hidden"
+    );
 
     return;
 
@@ -1973,45 +598,22 @@ function applyMember2CardDesign() {
    * MEMBER 2
    */
 
-  front.classList.add(
+  card.classList.add(
     "member2-active"
   );
 
-
-  back.classList.add(
-    "member2-active"
+  normalCard.classList.add(
+    "hidden"
   );
 
-
-  /*
-   * Absolutely no Member 2
-   * image backgrounds.
-   */
-
-  front.style.backgroundImage =
-    "none";
-
-
-  back.style.backgroundImage =
-    "none";
-
-
-  const frontCard =
-    createMember2Front(
-      front
-    );
-
-
-  const backCard =
-    createMember2Back(
-      back
-    );
+  member2Card.classList.remove(
+    "hidden"
+  );
 
 
   const customer =
     state.customer ||
     {};
-
 
   const personal =
     getPersonalInformation();
@@ -2043,74 +645,47 @@ function applyMember2CardDesign() {
     "—";
 
 
-  const nameElement =
-    frontCard.querySelector(
-      "#member2CardName"
-    );
+  if ($("member2CardName")) {
 
-
-  const memberElement =
-    frontCard.querySelector(
-      "#member2CardMember"
-    );
-
-
-  const expiryElement =
-    frontCard.querySelector(
-      "#member2CardExpiry"
-    );
-
-
-  const branchElement =
-    frontCard.querySelector(
-      "#member2CardIssueBranch"
-    );
-
-
-  if (nameElement) {
-
-    nameElement.textContent =
+    $("member2CardName").textContent =
       name;
 
   }
 
 
-  if (memberElement) {
+  if ($("member2CardMember")) {
 
-    memberElement.textContent =
+    $("member2CardMember").textContent =
       membership;
 
   }
 
 
-  if (expiryElement) {
+  if ($("member2CardExpiry")) {
 
-    expiryElement.textContent =
+    $("member2CardExpiry").textContent =
       expiry;
 
   }
 
 
-  if (branchElement) {
+  if ($("member2CardIssueBranch")) {
 
-    branchElement.textContent =
+    $("member2CardIssueBranch").textContent =
       issueBranch;
 
   }
 
 
   /*
-   * Synchronize barcode generated by backend.
+   * Synchronize barcode.
    */
 
   const normalBarcode =
     $("barcodeImg");
 
-
   const member2Barcode =
-    frontCard.querySelector(
-      "#member2BarcodeImg"
-    );
+    $("member2BarcodeImg");
 
 
   if (
@@ -2128,7 +703,7 @@ function applyMember2CardDesign() {
 
 
 /* ============================================================
-   RENDER CUSTOMER
+   CUSTOMER RENDER
    ============================================================ */
 
 function renderCustomer() {
@@ -2136,13 +711,8 @@ function renderCustomer() {
   const customer =
     state.customer;
 
-
-  if (
-    !customer
-  ) {
-
+  if (!customer) {
     return;
-
   }
 
 
@@ -2150,21 +720,18 @@ function renderCustomer() {
     getPersonalInformation();
 
 
-  const actualName =
+  const name =
     getBestCustomerName(
       customer,
       personal
-    );
-
-
-  const name =
-    actualName ||
+    ) ||
     "Member";
 
 
   const membership =
     customer.membership ||
     customer.membership_number ||
+    customer.cardNo ||
     personal.cardNo ||
     "";
 
@@ -2178,17 +745,23 @@ function renderCustomer() {
     );
 
 
-  const expiry =
-    getCustomerExpiry();
+  const initials =
+    name
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(
+        function(part) {
+          return part
+            .charAt(0);
+        }
+      )
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
 
 
-  const issueBranch =
-    getCustomerIssueBranch();
-
-
-  if (
-    $("sideName")
-  ) {
+  if ($("sideName")) {
 
     $("sideName").textContent =
       name;
@@ -2196,19 +769,7 @@ function renderCustomer() {
   }
 
 
-  if (
-    $("sideMember")
-  ) {
-
-    $("sideMember").textContent =
-      membership;
-
-  }
-
-
-  if (
-    $("welcomeName")
-  ) {
+  if ($("welcomeName")) {
 
     $("welcomeName").textContent =
       name;
@@ -2216,51 +777,49 @@ function renderCustomer() {
   }
 
 
-  if (
-    $("discountCardName")
-  ) {
+  if ($("cardName")) {
 
-    $("discountCardName").textContent =
+    $("cardName").textContent =
       name;
 
   }
 
 
-  if (
-    $("discountCardMember")
-  ) {
+  if ($("sideMember")) {
 
-    $("discountCardMember").textContent =
+    $("sideMember").textContent =
       membership;
 
   }
 
 
-  if (
-    $("discountCardExpiry")
-  ) {
+  if ($("cardMember")) {
 
-    $("discountCardExpiry").textContent =
-      expiry ||
-      "—";
+    $("cardMember").textContent =
+      membership;
 
   }
 
 
-  if (
-    $("discountCardIssueBranch")
-  ) {
+  if ($("sideAvatar")) {
 
-    $("discountCardIssueBranch").textContent =
-      issueBranch ||
-      "—";
+    $("sideAvatar").textContent =
+      initials ||
+      "M";
 
   }
 
 
-  if (
-    $("dashPoints")
-  ) {
+  if ($("topAvatar")) {
+
+    $("topAvatar").textContent =
+      initials ||
+      "M";
+
+  }
+
+
+  if ($("dashPoints")) {
 
     $("dashPoints").textContent =
       String(points);
@@ -2268,9 +827,7 @@ function renderCustomer() {
   }
 
 
-  if (
-    $("pointsBig")
-  ) {
+  if ($("pointsBig")) {
 
     $("pointsBig").textContent =
       String(points);
@@ -2278,51 +835,19 @@ function renderCustomer() {
   }
 
 
-  if (
-    $("pointsEarned")
-  ) {
+  if ($("pointsEarned")) {
 
     $("pointsEarned").textContent =
       String(
         Number(
           customer.pointsEarned ||
+          personal.pointsEarned ||
           0
         )
       );
 
   }
 
-
-  const firstLetter =
-    name.charAt(0)
-      .toUpperCase() ||
-    "M";
-
-
-  if (
-    $("sideAvatar")
-  ) {
-
-    $("sideAvatar").textContent =
-      firstLetter;
-
-  }
-
-
-  if (
-    $("topAvatar")
-  ) {
-
-    $("topAvatar").textContent =
-      firstLetter;
-
-  }
-
-
-  /*
-   * Member 2 must always be refreshed
-   * after customer information changes.
-   */
 
   applyMember2CardDesign();
 
@@ -2344,7 +869,6 @@ function personalField(
     String(value).trim() === ""
       ? "Not available"
       : String(value);
-
 
   return (
 
@@ -2372,20 +896,13 @@ function renderPersonalInformation(
   const grid =
     $("personalInfoGrid");
 
-
-  if (
-    !grid
-  ) {
-
+  if (!grid) {
     return;
-
   }
-
 
   info =
     info ||
     {};
-
 
   grid.innerHTML =
 
@@ -2500,10 +1017,7 @@ async function loadPersonalInformation() {
   const grid =
     $("personalInfoGrid");
 
-
-  if (
-    grid
-  ) {
+  if (grid) {
 
     grid.innerHTML =
       '<div class="empty-feature">' +
@@ -2512,7 +1026,6 @@ async function loadPersonalInformation() {
       '</div>';
 
   }
-
 
   try {
 
@@ -2544,9 +1057,7 @@ async function loadPersonalInformation() {
       {};
 
 
-    if (
-      !state.customer
-    ) {
+    if (!state.customer) {
 
       state.customer =
         {};
@@ -2565,9 +1076,7 @@ async function loadPersonalInformation() {
       );
 
 
-    if (
-      realName
-    ) {
+    if (realName) {
 
       state.customer.name =
         realName;
@@ -2575,9 +1084,16 @@ async function loadPersonalInformation() {
     }
 
 
-    if (
-      information.expiryDate
-    ) {
+    if (information.cardNo) {
+
+      state.customer.membership =
+        state.customer.membership ||
+        information.cardNo;
+
+    }
+
+
+    if (information.expiryDate) {
 
       state.customer.expiryDate =
         information.expiryDate;
@@ -2585,9 +1101,7 @@ async function loadPersonalInformation() {
     }
 
 
-    if (
-      information.issueBranch
-    ) {
+    if (information.issueBranch) {
 
       state.customer.issueBranch =
         information.issueBranch;
@@ -2609,7 +1123,6 @@ async function loadPersonalInformation() {
 
     renderCustomer();
 
-
     renderPersonalInformation(
       information
     );
@@ -2623,9 +1136,7 @@ async function loadPersonalInformation() {
     );
 
 
-    if (
-      grid
-    ) {
+    if (grid) {
 
       grid.innerHTML =
         '<div class="empty-feature">' +
@@ -2635,11 +1146,14 @@ async function loadPersonalInformation() {
           '<p>' +
             esc(
               error?.message ||
-              "Unable to load information from ARMS."
+              "Unable to load information."
             ) +
           '</p>' +
 
-          '<button class="primary" type="button" id="retryPersonalInformation">' +
+          '<button ' +
+            'class="primary" ' +
+            'type="button" ' +
+            'id="retryPersonalInformation">' +
             'Retry' +
           '</button>' +
 
@@ -2650,9 +1164,7 @@ async function loadPersonalInformation() {
         $("retryPersonalInformation");
 
 
-      if (
-        retry
-      ) {
+      if (retry) {
 
         retry.addEventListener(
           "click",
@@ -2770,19 +1282,13 @@ function purchaseAmount(
 ) {
 
   const value =
-
     purchase.total ??
-
     purchase.payment_amount ??
-
     purchase.amount ??
-
     0;
-
 
   const number =
     Number(value);
-
 
   return Number.isFinite(
     number
@@ -2797,20 +1303,168 @@ function purchasePoints(
   purchase
 ) {
 
-  const value =
-    purchase.points ??
-    0;
-
-
   const number =
-    Number(value);
-
+    Number(
+      purchase.points ??
+      0
+    );
 
   return Number.isFinite(
     number
   )
     ? number
     : 0;
+
+}
+
+
+/* ============================================================
+   PURCHASE LIST
+   ============================================================ */
+
+function renderPurchaseList(
+  purchases
+) {
+
+  const list =
+    $("purchaseList");
+
+  if (!list) {
+    return;
+  }
+
+
+  if (!purchases.length) {
+
+    list.innerHTML =
+      '<div class="empty-feature">' +
+
+        '<h2>No ARMS purchases returned</h2>' +
+
+        '<p>' +
+          'No purchase records were returned for this membership.' +
+        '</p>' +
+
+      '</div>';
+
+    return;
+
+  }
+
+
+  list.innerHTML =
+
+    purchases
+      .map(
+        function(
+          purchase,
+          index
+        ) {
+
+          const receipt =
+            purchaseReceipt(
+              purchase
+            );
+
+          const date =
+            purchaseDate(
+              purchase
+            );
+
+          const branch =
+            purchaseBranch(
+              purchase
+            );
+
+          const cashier =
+            purchaseCashier(
+              purchase
+            );
+
+          const reference =
+            purchaseReference(
+              purchase
+            );
+
+          const amount =
+            purchaseAmount(
+              purchase
+            );
+
+          const points =
+            purchasePoints(
+              purchase
+            );
+
+
+          return (
+
+            '<button ' +
+              'type="button" ' +
+              'class="purchase-card" ' +
+              'data-purchase-index="' +
+                index +
+              '">' +
+
+              '<div class="purchase-main">' +
+
+                '<b>' +
+                  'Receipt #' +
+                  esc(receipt) +
+                '</b>' +
+
+                '<span>' +
+
+                  esc(date) +
+
+                  (
+                    branch
+                      ? " · " +
+                        esc(branch)
+                      : ""
+                  ) +
+
+                  (
+                    cashier
+                      ? " · Cashier " +
+                        esc(cashier)
+                      : ""
+                  ) +
+
+                '</span>' +
+
+                (
+                  reference
+                    ? '<span>Ref: ' +
+                      esc(reference) +
+                      '</span>'
+                    : ""
+                ) +
+
+              '</div>' +
+
+              '<div class="purchase-points">' +
+
+                '<strong>' +
+                  'RM ' +
+                  amount.toFixed(2) +
+                '</strong>' +
+
+                '<small>' +
+                  '+' +
+                  esc(points) +
+                  ' points' +
+                '</small>' +
+
+              '</div>' +
+
+            '</button>'
+
+          );
+
+        }
+      )
+      .join("");
 
 }
 
@@ -2824,13 +1478,8 @@ function renderDashboard() {
   const dashboard =
     state.dashboard;
 
-
-  if (
-    !dashboard
-  ) {
-
+  if (!dashboard) {
     return;
-
   }
 
 
@@ -2844,7 +1493,7 @@ function renderDashboard() {
 
   const totalSpend =
     purchases.reduce(
-      function (
+      function(
         sum,
         purchase
       ) {
@@ -2861,9 +1510,7 @@ function renderDashboard() {
     );
 
 
-  if (
-    $("dashSpend")
-  ) {
+  if ($("dashSpend")) {
 
     $("dashSpend").textContent =
       "RM " +
@@ -2872,9 +1519,7 @@ function renderDashboard() {
   }
 
 
-  if (
-    $("dashTransactions")
-  ) {
+  if ($("dashTransactions")) {
 
     $("dashTransactions").textContent =
       String(
@@ -2884,9 +1529,7 @@ function renderDashboard() {
   }
 
 
-  if (
-    $("pointsSpend")
-  ) {
+  if ($("pointsSpend")) {
 
     $("pointsSpend").textContent =
       "RM " +
@@ -2895,155 +1538,14 @@ function renderDashboard() {
   }
 
 
-  if (
-    $("purchaseList")
-  ) {
-
-    if (
-      !purchases.length
-    ) {
-
-      $("purchaseList").innerHTML =
-        '<div class="empty-feature">' +
-          '<h2>No ARMS purchases returned</h2>' +
-          '<p>No purchase records were returned for this membership.</p>' +
-        '</div>';
-
-    } else {
-
-      $("purchaseList").innerHTML =
-
-        purchases
-          .map(
-            function (
-              purchase,
-              index
-            ) {
-
-              const receipt =
-                purchaseReceipt(
-                  purchase
-                );
+  renderPurchaseList(
+    purchases
+  );
 
 
-              const date =
-                purchaseDate(
-                  purchase
-                );
+  if ($("pointsRows")) {
 
-
-              const branch =
-                purchaseBranch(
-                  purchase
-                );
-
-
-              const cashier =
-                purchaseCashier(
-                  purchase
-                );
-
-
-              const reference =
-                purchaseReference(
-                  purchase
-                );
-
-
-              const amount =
-                purchaseAmount(
-                  purchase
-                );
-
-
-              const points =
-                purchasePoints(
-                  purchase
-                );
-
-
-              return (
-
-                '<button ' +
-
-                  'type="button" ' +
-
-                  'class="purchase-card" ' +
-
-                  'data-purchase-index="' +
-                    index +
-                  '"' +
-
-                '>' +
-
-                  '<div class="purchase-main">' +
-
-                    '<b>Receipt #' +
-                      esc(receipt) +
-                    '</b>' +
-
-                    '<span>' +
-
-                      esc(date) +
-
-                      (
-                        branch
-                          ? " · " +
-                            esc(branch)
-                          : ""
-                      ) +
-
-                      (
-                        cashier
-                          ? " · Cashier " +
-                            esc(cashier)
-                          : ""
-                      ) +
-
-                    '</span>' +
-
-                    (
-                      reference
-                        ? '<span>Ref: ' +
-                          esc(reference) +
-                          '</span>'
-                        : ''
-                    ) +
-
-                  '</div>' +
-
-                  '<div class="purchase-points">' +
-
-                    '<strong>RM ' +
-                      amount.toFixed(2) +
-                    '</strong>' +
-
-                    '<small>+' +
-                      esc(points) +
-                      ' points</small>' +
-
-                  '</div>' +
-
-                '</button>'
-
-              );
-
-            }
-          )
-          .join("");
-
-    }
-
-  }
-
-
-  if (
-    $("pointsRows")
-  ) {
-
-    if (
-      !purchases.length
-    ) {
+    if (!purchases.length) {
 
       $("pointsRows").innerHTML =
         '<div class="empty-feature">' +
@@ -3056,9 +1558,7 @@ function renderDashboard() {
 
         purchases
           .map(
-            function (
-              purchase
-            ) {
+            function(purchase) {
 
               return (
 
@@ -3110,19 +1610,14 @@ function renderDashboard() {
       : [];
 
 
-  if (
-    $("rewardsGrid")
-  ) {
+  if ($("rewardsGrid")) {
 
     $("rewardsGrid").innerHTML =
-
       rewards.length
 
         ? rewards
             .map(
-              function (
-                item
-              ) {
+              function(item) {
 
                 return (
 
@@ -3168,19 +1663,14 @@ function renderDashboard() {
       : [];
 
 
-  if (
-    $("offersGrid")
-  ) {
+  if ($("offersGrid")) {
 
     $("offersGrid").innerHTML =
-
       offers.length
 
         ? offers
             .map(
-              function (
-                item
-              ) {
+              function(item) {
 
                 return (
 
@@ -3218,9 +1708,7 @@ function renderDashboard() {
   }
 
 
-  if (
-    $("backendStatus")
-  ) {
+  if ($("backendStatus")) {
 
     $("backendStatus").textContent =
       "ARMS session online";
@@ -3231,7 +1719,7 @@ function renderDashboard() {
 
 
 /* ============================================================
-   PURCHASE DETAILS
+   PURCHASE DETAIL
    ============================================================ */
 
 function showPurchaseDetail(
@@ -3239,12 +1727,10 @@ function showPurchaseDetail(
 ) {
 
   const history =
-    $("purchaseHistoryView");
-
+    $("view-purchases");
 
   const detailView =
     $("purchaseDetailView");
-
 
   const detail =
     $("purchaseDetail");
@@ -3268,9 +1754,7 @@ function showPurchaseDetail(
     [];
 
 
-  if (
-    history
-  ) {
+  if (history) {
 
     history.classList.add(
       "hidden"
@@ -3284,9 +1768,7 @@ function showPurchaseDetail(
   );
 
 
-  if (
-    !items.length
-  ) {
+  if (!items.length) {
 
     detail.innerHTML =
 
@@ -3307,13 +1789,11 @@ function showPurchaseDetail(
         '<button ' +
           'class="primary" ' +
           'type="button" ' +
-          'id="backPurchaseHistoryBtn"' +
-        '>' +
+          'id="backPurchaseHistoryBtn">' +
           'Back to Purchase History' +
         '</button>' +
 
       '</div>';
-
 
   } else {
 
@@ -3341,14 +1821,11 @@ function showPurchaseDetail(
 
         '</div>' +
 
-
         '<div class="purchase-items">' +
 
           items
             .map(
-              function (
-                item
-              ) {
+              function(item) {
 
                 const name =
                   item.name ||
@@ -3357,12 +1834,10 @@ function showPurchaseDetail(
                   item.item_name ||
                   "Item";
 
-
                 const quantity =
                   item.quantity ??
                   item.qty ??
                   1;
-
 
                 const price =
                   Number(
@@ -3391,10 +1866,8 @@ function showPurchaseDetail(
                     '</div>' +
 
                     '<strong>' +
-
                       'RM ' +
                       price.toFixed(2) +
-
                     '</strong>' +
 
                   '</div>'
@@ -3407,12 +1880,10 @@ function showPurchaseDetail(
 
         + '</div>' +
 
-
         '<button ' +
           'class="primary" ' +
           'type="button" ' +
-          'id="backPurchaseHistoryBtn"' +
-        '>' +
+          'id="backPurchaseHistoryBtn">' +
           'Back to Purchase History' +
         '</button>' +
 
@@ -3425,34 +1896,27 @@ function showPurchaseDetail(
     $("backPurchaseHistoryBtn");
 
 
-  if (
-    backButton
-  ) {
+  if (backButton) {
 
     backButton.addEventListener(
       "click",
-      function () {
+      function() {
 
-        if (
-          detailView
-        ) {
+        detailView.classList.add(
+          "hidden"
+        );
 
-          detailView.classList.add(
-            "hidden"
-          );
-
-        }
-
-
-        if (
-          history
-        ) {
+        if (history) {
 
           history.classList.remove(
             "hidden"
           );
 
         }
+
+        showView(
+          "purchases"
+        );
 
       }
     );
@@ -3463,29 +1927,22 @@ function showPurchaseDetail(
 
 
 /* ============================================================
-   PURCHASE CLICK HANDLER
+   PURCHASE CLICK
    ============================================================ */
 
 function setupPurchaseDetails() {
 
   document.addEventListener(
     "click",
-    function (
-      event
-    ) {
+    function(event) {
 
       const card =
         event.target.closest(
           "[data-purchase-index]"
         );
 
-
-      if (
-        !card
-      ) {
-
+      if (!card) {
         return;
-
       }
 
 
@@ -3530,14 +1987,15 @@ async function loadPurchaseHistory() {
     $("purchaseList");
 
 
-  if (
-    list
-  ) {
+  if (list) {
 
     list.innerHTML =
       '<div class="empty-feature">' +
+
         '<h2>Loading Purchase History…</h2>' +
+
         '<p>Fetching ARMS purchase history.</p>' +
+
       '</div>';
 
   }
@@ -3609,9 +2067,7 @@ async function loadPurchaseHistory() {
     );
 
 
-    if (
-      list
-    ) {
+    if (list) {
 
       list.innerHTML =
 
@@ -3630,8 +2086,7 @@ async function loadPurchaseHistory() {
           '<button ' +
             'class="primary" ' +
             'type="button" ' +
-            'id="retryPurchasesBtn"' +
-          '>' +
+            'id="retryPurchasesBtn">' +
             'Retry' +
           '</button>' +
 
@@ -3642,9 +2097,7 @@ async function loadPurchaseHistory() {
         $("retryPurchasesBtn");
 
 
-      if (
-        retry
-      ) {
+      if (retry) {
 
         retry.addEventListener(
           "click",
@@ -3705,10 +2158,15 @@ async function loadCardVisuals() {
 
 
 /* ============================================================
-   MEMBERSHIP CARD SYNC
+   MEMBERSHIP SYNC
    ============================================================ */
 
 async function syncMembershipCard() {
+
+  if (!state.authenticated) {
+    return false;
+  }
+
 
   try {
 
@@ -3723,86 +2181,104 @@ async function syncMembershipCard() {
 
 
     if (
-      result?.personalInformation
+      !result ||
+      !result.ok
     ) {
 
-      const information =
-        result.personalInformation;
-
-
-      if (
-        !state.customer
-      ) {
-
-        state.customer =
-          {};
-
-      }
-
-
-      state.customer.personalInformation =
-        information;
-
-
-      const name =
-        getBestCustomerName(
-          state.customer,
-          information
-        );
-
-
-      if (
-        name
-      ) {
-
-        state.customer.name =
-          name;
-
-      }
-
-
-      if (
-        information.expiryDate
-      ) {
-
-        state.customer.expiryDate =
-          information.expiryDate;
-
-      }
-
-
-      if (
-        information.issueBranch
-      ) {
-
-        state.customer.issueBranch =
-          information.issueBranch;
-
-      }
-
-
-      if (
-        information.membershipType ||
-        information.memberType
-      ) {
-
-        state.customer.membershipType =
-          information.membershipType ||
-          information.memberType;
-
-      }
-
-
-      renderCustomer();
+      throw new Error(
+        result?.error ||
+        "Personal information was not returned by ARMS."
+      );
 
     }
 
+
+    const information =
+      result.personalInformation ||
+      {};
+
+
+    if (!state.customer) {
+
+      state.customer =
+        {};
+
+    }
+
+
+    state.customer.personalInformation =
+      information;
+
+
+    const name =
+      getBestCustomerName(
+        state.customer,
+        information
+      );
+
+
+    if (name) {
+
+      state.customer.name =
+        name;
+
+    }
+
+
+    if (
+      information.cardNo &&
+      !state.customer.membership
+    ) {
+
+      state.customer.membership =
+        information.cardNo;
+
+    }
+
+
+    if (information.expiryDate) {
+
+      state.customer.expiryDate =
+        information.expiryDate;
+
+    }
+
+
+    if (information.issueBranch) {
+
+      state.customer.issueBranch =
+        information.issueBranch;
+
+    }
+
+
+    if (
+      information.membershipType ||
+      information.memberType
+    ) {
+
+      state.customer.membershipType =
+        information.membershipType ||
+        information.memberType;
+
+    }
+
+
+    renderCustomer();
+
+
+    return true;
+
   } catch (error) {
 
-    console.error(
+    console.warn(
       "MEMBERSHIP CARD SYNC FAILED",
       error
     );
+
+    renderCustomer();
+
+    return false;
 
   }
 
@@ -3822,9 +2298,7 @@ function showView(
       ".view"
     )
     .forEach(
-      function (
-        section
-      ) {
+      function(section) {
 
         section.classList.add(
           "hidden"
@@ -3835,15 +2309,10 @@ function showView(
 
 
   const selected =
-    $(
-      "view-" +
-      view
-    );
+    $("view-" + view);
 
 
-  if (
-    selected
-  ) {
+  if (selected) {
 
     selected.classList.remove(
       "hidden"
@@ -3857,13 +2326,12 @@ function showView(
       ".nav-item"
     )
     .forEach(
-      function (
-        item
-      ) {
+      function(item) {
 
         item.classList.toggle(
           "active",
-          item.dataset.view === view
+          item.dataset.view ===
+            view
         );
 
       }
@@ -3899,9 +2367,7 @@ function showView(
   };
 
 
-  if (
-    $("pageTitle")
-  ) {
+  if ($("pageTitle")) {
 
     $("pageTitle").textContent =
       titles[view] ||
@@ -3930,9 +2396,16 @@ function showView(
   }
 
 
-  if (
-    $("sidebar")
-  ) {
+  if ($("purchaseDetailView")) {
+
+    $("purchaseDetailView")
+      .classList
+      .add("hidden");
+
+  }
+
+
+  if ($("sidebar")) {
 
     $("sidebar")
       .classList
@@ -3954,13 +2427,11 @@ function setupNavigation() {
       "[data-view]"
     )
     .forEach(
-      function (
-        element
-      ) {
+      function(element) {
 
         element.addEventListener(
           "click",
-          function () {
+          function() {
 
             const view =
               element.dataset.view;
@@ -4010,17 +2481,13 @@ function setupNavigation() {
     );
 
 
-  if (
-    $("menuBtn")
-  ) {
+  if ($("menuBtn")) {
 
     $("menuBtn").addEventListener(
       "click",
-      function () {
+      function() {
 
-        if (
-          $("sidebar")
-        ) {
+        if ($("sidebar")) {
 
           $("sidebar")
             .classList
@@ -4034,9 +2501,7 @@ function setupNavigation() {
   }
 
 
-  if (
-    $("logoutBtn")
-  ) {
+  if ($("logoutBtn")) {
 
     $("logoutBtn").addEventListener(
       "click",
@@ -4046,13 +2511,11 @@ function setupNavigation() {
   }
 
 
-  if (
-    $("openStoreBtn")
-  ) {
+  if ($("openStoreBtn")) {
 
     $("openStoreBtn").addEventListener(
       "click",
-      function () {
+      function() {
 
         window.location.href =
           "https://hasanibooks.com/";
@@ -4063,13 +2526,11 @@ function setupNavigation() {
   }
 
 
-  if (
-    $("openLocationsBtn")
-  ) {
+  if ($("openLocationsBtn")) {
 
     $("openLocationsBtn").addEventListener(
       "click",
-      function () {
+      function() {
 
         window.location.href =
           "https://hasanibooks.com/store-locator";
@@ -4108,13 +2569,9 @@ async function login(
       : "";
 
 
-  if (
-    !membership
-  ) {
+  if (!membership) {
 
-    if (
-      $("loginMessage")
-    ) {
+    if ($("loginMessage")) {
 
       $("loginMessage").textContent =
         "Please enter your membership card number.";
@@ -4126,13 +2583,9 @@ async function login(
   }
 
 
-  if (
-    !password
-  ) {
+  if (!password) {
 
-    if (
-      $("loginMessage")
-    ) {
+    if ($("loginMessage")) {
 
       $("loginMessage").textContent =
         "Please enter your password.";
@@ -4144,9 +2597,7 @@ async function login(
   }
 
 
-  if (
-    $("loginMessage")
-  ) {
+  if ($("loginMessage")) {
 
     $("loginMessage").textContent =
       "Signing in to ARMS…";
@@ -4224,9 +2675,7 @@ async function login(
     }
 
 
-    if (
-      me.customer
-    ) {
+    if (me.customer) {
 
       state.customer =
         me.customer;
@@ -4263,10 +2712,7 @@ async function login(
           true,
 
         historyLoading:
-          true,
-
-        historyMessage:
-          "Purchase history is loading."
+          true
 
       }
 
@@ -4275,11 +2721,12 @@ async function login(
 
     showApp();
 
-
     renderCustomer();
 
     renderDashboard();
 
+
+    await syncMembershipCard();
 
     await loadPersonalInformation();
 
@@ -4293,9 +2740,7 @@ async function login(
     );
 
 
-    if (
-      $("loginMessage")
-    ) {
+    if ($("loginMessage")) {
 
       $("loginMessage").textContent =
         "";
@@ -4309,6 +2754,16 @@ async function login(
       "LOGIN FAILED",
       error
     );
+
+
+    if (
+      error.code ===
+      "CUSTOMER_SESSION_EXPIRED"
+    ) {
+
+      return;
+
+    }
 
 
     showLogin(
@@ -4338,12 +2793,7 @@ async function logout() {
     );
 
   } catch (error) {
-
-    /*
-     * Clear local state even if
-     * backend logout fails.
-     */
-
+    // Local state is still cleared.
   }
 
 
@@ -4354,9 +2804,7 @@ async function logout() {
   );
 
 
-  if (
-    $("loginPassword")
-  ) {
+  if ($("loginPassword")) {
 
     $("loginPassword").value =
       "123123";
@@ -4367,10 +2815,10 @@ async function logout() {
 
 
 /* ============================================================
-   INITIAL SESSION CHECK
+   SESSION RESTORE
    ============================================================ */
 
-async function checkExistingSession() {
+async function restoreSession() {
 
   try {
 
@@ -4385,131 +2833,257 @@ async function checkExistingSession() {
 
 
     if (
-      result &&
-      result.ok &&
-      result.authenticated
+      !result ||
+      !result.ok ||
+      !result.authenticated
     ) {
 
-      state.customer =
-        result.customer ||
-        null;
-
-
-      state.authenticated =
-        true;
-
-
-      state.dashboard = {
-
-        ok:
-          true,
-
-        source:
-          "ARMS",
-
-        customer:
-          state.customer,
-
-        purchases:
-          [],
-
-        rewards:
-          [],
-
-        offers:
-          [],
-
-        locations:
-          [],
-
-        integration: {
-
-          armsAuthenticated:
-            true,
-
-          historyLoading:
-            true
-
-        }
-
-      };
-
-
-      showApp();
-
-
-      renderCustomer();
-
-      renderDashboard();
-
-      await loadPersonalInformation();
-
-      await loadCardVisuals();
-
-      await loadPurchaseHistory();
-
-      showView(
-        "dashboard"
-      );
-
+      showLogin("");
 
       return;
 
     }
 
-  } catch (error) {
 
-    console.log(
-      "No existing customer session."
+    state.customer =
+      result.customer ||
+      null;
+
+
+    state.authenticated =
+      true;
+
+
+    state.dashboard = {
+
+      ok:
+        true,
+
+      source:
+        "ARMS",
+
+      customer:
+        state.customer,
+
+      purchases:
+        [],
+
+      rewards:
+        [],
+
+      offers:
+        [],
+
+      locations:
+        [],
+
+      integration: {
+
+        armsAuthenticated:
+          true,
+
+        historyLoading:
+          true
+
+      }
+
+    };
+
+
+    showApp();
+
+
+    renderCustomer();
+
+    renderDashboard();
+
+
+    await syncMembershipCard();
+
+
+    await loadCardVisuals();
+
+
+    await loadPurchaseHistory();
+
+
+    showView(
+      "dashboard"
     );
 
+
+  } catch (error) {
+
+    if (
+      error.code ===
+      "CUSTOMER_SESSION_EXPIRED"
+    ) {
+
+      return;
+
+    }
+
+
+    clearState();
+
+    showLogin("");
+
   }
-
-
-  showLogin(
-    ""
-  );
 
 }
 
 
 /* ============================================================
-   START APPLICATION
+   BACKEND HEALTH
    ============================================================ */
 
-document.addEventListener(
-  "DOMContentLoaded",
-  function () {
+async function checkBackend() {
 
-    installMember2CardStyles();
+  try {
 
-    setupNavigation();
+    const base =
+      API.replace(
+        /\/api$/,
+        ""
+      );
 
-    setupPurchaseDetails();
+
+    const response =
+      await fetch(
+        base +
+        "/health?_v=" +
+        APP_VERSION +
+        "_" +
+        Date.now(),
+        {
+          method:
+            "GET",
+
+          credentials:
+            "include",
+
+          cache:
+            "no-store"
+        }
+      );
 
 
-    if (
-      $("loginForm")
-    ) {
+    if (!response.ok) {
 
-      $("loginForm").addEventListener(
-        "submit",
-        login
+      throw new Error(
+        "Health request failed."
       );
 
     }
 
 
-    /*
-     * Make sure Member 1 is shown
-     * until customer data determines
-     * that the member is Member 2.
-     */
-
-    applyMember2CardDesign();
+    const data =
+      await response.json();
 
 
-    checkExistingSession();
+    if ($("backendStatus")) {
+
+      $("backendStatus").textContent =
+        data.ok
+          ? "Backend online"
+          : "Backend error";
+
+    }
+
+
+  } catch (error) {
+
+    console.error(
+      "BACKEND HEALTH FAILED",
+      error
+    );
+
+
+    if ($("backendStatus")) {
+
+      $("backendStatus").textContent =
+        "Backend offline";
+
+    }
 
   }
-);
+
+}
+
+
+/* ============================================================
+   INITIALIZATION
+   ============================================================ */
+
+function initializeApp() {
+
+  console.log(
+    "=========================================="
+  );
+
+  console.log(
+    "HASANI CUSTOMER WEB APP"
+  );
+
+  console.log(
+    "Version:",
+    APP_VERSION
+  );
+
+  console.log(
+    "API:",
+    API
+  );
+
+  console.log(
+    "=========================================="
+  );
+
+
+  if (!$("loginForm")) {
+
+    console.error(
+      "loginForm not found"
+    );
+
+    return;
+
+  }
+
+
+  $("loginForm").addEventListener(
+    "submit",
+    login
+  );
+
+
+  setupNavigation();
+
+  setupPurchaseDetails();
+
+  checkBackend();
+
+  restoreSession();
+
+}
+
+
+/* ============================================================
+   START
+   ============================================================ */
+
+if (
+  document.readyState ===
+  "loading"
+) {
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    initializeApp
+  );
+
+} else {
+
+  initializeApp();
+
+    }
