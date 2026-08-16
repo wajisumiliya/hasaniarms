@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Hasani ARMS Customer Portal — Production 7.1 — ARMS Session + Frontend API Fix
 
 This package contains the Web frontend, Flutter client, and Node.js ARMS integration backend.
@@ -138,3 +139,7 @@ Do not expose diagnostic endpoints on a public production deployment. They are i
 ## v7.1 API routing fix
 
 The Web and Flutter clients use `http://localhost:5000` as the base URL and explicitly call `/api/customer/...`. This prevents accidental `/api/api/...` URLs and matches the Node routes.
+=======
+# hasaniarms
+Membership 
+>>>>>>> 19a58f20f28503d55dfd398c9874105631fd1891
