@@ -1,642 +1,378 @@
 <!doctype html>
 <html lang="en">
-
 <head>
-
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
 
-  <meta
-    name="viewport"
-    content="width=device-width,initial-scale=1"
-  >
+  <title>HASANI BOOKS — Customer Portal</title>
 
-  <title>HASANI BOOKS CUSTOMER PORTAL</title>
-
-  <link
-    rel="stylesheet"
-    href="css/app.css"
-  >
-
-  <!-- Font Awesome -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
-  >
-
+  <link rel="stylesheet" href="css/app.css">
 </head>
-
 
 <body>
 
+  <!-- =========================================================
+       LOGIN
+       ========================================================= -->
 
-<!-- =========================================================
-     LOGIN PAGE
-     ========================================================= -->
+  <div id="loginPage" class="auth-shell">
 
-<div
-  id="loginPage"
-  class="auth-shell"
->
+    <div class="auth-card">
 
-  <div class="auth-card">
+      <div class="login-logo">
+        <img
+          src="assets/hasani-books-logo.jpg"
+          alt="Hasani Books"
+        >
+      </div>
 
-    <div class="login-logo">
+      <span class="eyebrow">
+        CUSTOMER PORTAL
+      </span>
 
-      <img
-        src="assets/hasani-books-logo.jpg"
-        alt="Hasani Books"
-      >
+      <h1>
+        Member Login
+      </h1>
+
+      <p>
+        Sign in to view your Hasani Books membership,
+        points and purchase history.
+      </p>
+
+      <form id="loginForm">
+
+        <label>
+          Membership Card No.
+          <input
+            id="loginMembership"
+            type="text"
+            autocomplete="username"
+            placeholder="Enter membership card number"
+            required
+          >
+        </label>
+
+        <label>
+          Password
+          <input
+            id="loginPassword"
+            type="password"
+            value="123123"
+            autocomplete="current-password"
+            required
+          >
+        </label>
+
+        <button
+          class="primary full"
+          type="submit"
+        >
+          Login
+        </button>
+
+      </form>
+
+      <div
+        id="loginMessage"
+        class="message"
+      ></div>
+
+      <small>
+        Initial test password: 123123
+      </small>
 
     </div>
-
-
-    <p>
-      Member login
-    </p>
-
-
-    <form
-      id="loginForm"
-    >
-
-      <label>
-
-        Membership Card Number
-
-        <input
-          id="loginMembership"
-          value="000101020212"
-          autocomplete="username"
-          required
-        >
-
-      </label>
-
-
-      <label>
-
-        Password
-
-        <input
-          id="loginPassword"
-          type="password"
-          value="123123"
-          autocomplete="current-password"
-          required
-        >
-
-      </label>
-
-
-      <button
-        class="primary full"
-        type="submit"
-      >
-        Login
-      </button>
-
-    </form>
-
-
-    <div
-      id="loginMessage"
-      class="message"
-    ></div>
-
 
   </div>
 
-</div>
 
+  <!-- =========================================================
+       APPLICATION
+       ========================================================= -->
 
-
-<!-- =========================================================
-     APPLICATION
-     ========================================================= -->
-
-<div
-  id="appShell"
-  class="app-shell hidden"
->
-
-
-  <!-- =======================================================
-       SIDEBAR
-       ======================================================= -->
-
-  <aside
-    id="sidebar"
-    class="sidebar"
+  <div
+    id="appShell"
+    class="app-shell hidden"
   >
 
+    <!-- =======================================================
+         SIDEBAR
+         ======================================================= -->
 
-    <!-- HASANI BOOKS LOGO -->
-
-    <div class="side-brand">
-
-      <img
-        src="assets/hasani-books-logo.jpg"
-        alt="Hasani Books"
-        class="sidebar-logo"
-      >
-
-    </div>
-
-
-    <!-- CUSTOMER -->
-
-    <div class="side-user">
-
-      <div
-        id="sideAvatar"
-        class="avatar"
-      >
-        A
-      </div>
-
-
-      <div>
-
-        <b id="sideName">
-          ARMS Customer
-        </b>
-
-        <small id="sideMember">
-          000101020212
-        </small>
-
-      </div>
-
-    </div>
-
-
-    <!-- NAVIGATION -->
-
-    <nav>
-
-
-      <button
-        data-view="dashboard"
-        class="nav-item active"
-      >
-        ⌂
-        <span>
-          Dashboard
-        </span>
-      </button>
-
-
-      <button
-        data-view="purchases"
-        class="nav-item"
-      >
-        ▣
-        <span>
-          Purchase History
-        </span>
-      </button>
-
-
-      <button
-        data-view="points"
-        class="nav-item"
-      >
-        ★
-        <span>
-          Member Points
-        </span>
-      </button>
-
-
-      <button
-        data-view="personal"
-        class="nav-item"
-      >
-        ◉
-        <span>
-          Personal Information
-        </span>
-      </button>
-
-
-      <button
-        data-view="rewards"
-        class="nav-item"
-      >
-        🎁
-        <span>
-          Rewards
-        </span>
-      </button>
-
-
-      <button
-        data-view="offers"
-        class="nav-item"
-      >
-        🏷
-        <span>
-          Offers
-        </span>
-      </button>
-
-
-      <button
-        data-view="store"
-        class="nav-item"
-      >
-        🛒
-        <span>
-          Online Store
-        </span>
-      </button>
-
-
-      <button
-        data-view="locations"
-        class="nav-item"
-      >
-        ⌖
-        <span>
-          Locations
-        </span>
-      </button>
-
-
-    </nav>
-
-
-    <!-- LOGOUT -->
-
-    <button
-      id="logoutBtn"
-      class="logout"
-    >
-      ↪ Logout
-    </button>
-
-
-  </aside>
-
-
-
-  <!-- =======================================================
-       MAIN AREA
-       ======================================================= -->
-
-  <div class="main-area">
-
-
-    <!-- =====================================================
-         TOP BAR
-         ===================================================== -->
-
-    <header
-      class="topbar"
+    <aside
+      id="sidebar"
+      class="sidebar"
     >
 
+      <div class="side-brand">
 
-      <button
-        id="menuBtn"
-        class="icon-btn"
-        type="button"
-      >
-        ☰
-      </button>
-
-
-      <div>
-
-        <span
-          class="eyebrow"
+        <img
+          src="assets/hasani-books-logo.jpg"
+          alt="Hasani Books"
+          class="sidebar-logo"
         >
-          CUSTOMER PORTAL
-        </span>
-
-
-        <h2
-          id="pageTitle"
-        >
-          Dashboard
-        </h2>
 
       </div>
 
 
-      <div
-        class="top-actions"
-      >
-
-        <span
-          id="backendStatus"
-        >
-          Checking…
-        </span>
-
+      <div class="side-user">
 
         <div
-          id="topAvatar"
+          id="sideAvatar"
           class="avatar"
         >
           A
         </div>
 
+        <div>
+
+          <b id="sideName">
+            ARMS Customer
+          </b>
+
+          <small id="sideMember">
+            —
+          </small>
+
+        </div>
+
       </div>
 
 
-    </header>
+      <nav>
+
+        <button
+          data-view="dashboard"
+          class="nav-item active"
+          type="button"
+        >
+          ⌂
+          <span>Dashboard</span>
+        </button>
+
+        <button
+          data-view="purchases"
+          class="nav-item"
+          type="button"
+        >
+          ▣
+          <span>Purchase History</span>
+        </button>
+
+        <button
+          data-view="points"
+          class="nav-item"
+          type="button"
+        >
+          ★
+          <span>Member Points</span>
+        </button>
+
+        <button
+          data-view="personal"
+          class="nav-item"
+          type="button"
+        >
+          ◉
+          <span>Personal Information</span>
+        </button>
+
+        <button
+          data-view="rewards"
+          class="nav-item"
+          type="button"
+        >
+          🎁
+          <span>Rewards</span>
+        </button>
+
+        <button
+          data-view="offers"
+          class="nav-item"
+          type="button"
+        >
+          🏷
+          <span>Offers</span>
+        </button>
+
+        <button
+          data-view="store"
+          class="nav-item"
+          type="button"
+        >
+          🛒
+          <span>Online Store</span>
+        </button>
+
+        <button
+          data-view="locations"
+          class="nav-item"
+          type="button"
+        >
+          ⌖
+          <span>Locations</span>
+        </button>
+
+      </nav>
 
 
-
-    <!-- =====================================================
-         CONTENT
-         ===================================================== -->
-
-    <main
-      class="content"
-    >
-
-
-      <!-- ===================================================
-           DASHBOARD
-           =================================================== -->
-
-      <section
-        id="view-dashboard"
-        class="view"
+      <button
+        id="logoutBtn"
+        class="logout"
+        type="button"
       >
+        ↪ Logout
+      </button>
+
+    </aside>
 
 
-        <!-- WELCOME -->
+    <!-- =======================================================
+         MAIN
+         ======================================================= -->
 
-        <div
-          class="welcome"
+    <div class="main-area">
+
+      <header class="topbar">
+
+        <button
+          id="menuBtn"
+          class="icon-btn"
+          type="button"
+        >
+          ☰
+        </button>
+
+        <div>
+
+          <span class="eyebrow">
+            CUSTOMER PORTAL
+          </span>
+
+          <h2 id="pageTitle">
+            Dashboard
+          </h2>
+
+        </div>
+
+        <div class="top-actions">
+
+          <span id="backendStatus">
+            Checking…
+          </span>
+
+          <div
+            id="topAvatar"
+            class="avatar"
+          >
+            A
+          </div>
+
+        </div>
+
+      </header>
+
+
+      <main class="content">
+
+
+        <!-- ===================================================
+             DASHBOARD
+             =================================================== -->
+
+        <section
+          id="view-dashboard"
+          class="view"
         >
 
-          <div>
+          <div class="welcome">
 
-            <span
-              class="eyebrow"
+            <div>
+
+              <span class="eyebrow">
+                WELCOME BACK
+              </span>
+
+              <h1 id="welcomeName">
+                ARMS Customer
+              </h1>
+
+              <p>
+                Your membership, points and purchases
+                in one place.
+              </p>
+
+            </div>
+
+            <button
+              class="primary"
+              type="button"
+              data-view="purchases"
             >
-              WELCOME BACK
-            </span>
-
-
-            <h1
-              id="welcomeName"
-            >
-              ARMS Customer
-            </h1>
-
-
-            <p>
-              Your membership, points and purchases in one place.
-            </p>
+              View Purchases
+            </button>
 
           </div>
 
 
-          <button
-            class="primary"
-            data-view="purchases"
-            type="button"
-          >
-            View Purchases
-          </button>
+          <!-- =================================================
+               ONE CARD CONTAINER
 
-        </div>
+               Member 1:
+               normal card
 
-
-
-        <!-- =================================================
-             HASANI BOOKS MEMBERSHIP CARDS
-             ================================================= -->
-
-
-             
-
-        <div
-          class="discount-cards"
-        >
-
-
-          <!-- ===============================================
-               FRONT CARD
-               =============================================== -->
+               Member 2:
+               JS replaces visual content inside this
+               SAME container.
+               ================================================= -->
 
           <div
-            class="discount-card-wrap"
+            id="membershipCard"
+            class="member-card"
           >
 
+            <!-- NORMAL MEMBER 1 CARD -->
 
             <div
-              class="discount-card discount-front"
+              id="normalMemberCard"
+              class="normal-member-card"
             >
 
+              <div class="member-card-head">
 
-              <!-- BLUE HEADER -->
+                <div>
 
-              <div
-                class="discount-front-header"
-              >
+                  <span class="eyebrow light">
+                    HASANI MEMBER
+                  </span>
 
+                  <h2 id="cardName">
+                    ARMS Customer
+                  </h2>
 
-                <!-- HASANI BOOKS LOGO -->
-
-                <div
-                  class="discount-front-logo"
-                >
-
-                  <img
-                    src="assets/hasani-books-logo.jpg"
-                    alt="Hasani Books"
-                  >
+                  <p id="cardMember">
+                    —
+                  </p>
 
                 </div>
 
-
-                <!-- DISCOUNT PERCENTAGE -->
-
-                <div
-                  class="discount-percent"
-                >
-                  %
-                </div>
-
-
-                <!-- CARD TITLE -->
-
-                <div
-                  class="discount-card-title"
-                >
-                  DISCOUNT CARD
-                </div>
-
+                <span class="chip">
+                  MEMBER
+                </span>
 
               </div>
 
 
+              <div class="card-code">
 
-              <!-- RED LINE -->
-
-              <div
-                class="discount-red-divider"
-              ></div>
-
-
-
-              <!-- WHITE BODY -->
-
-              <div
-                class="discount-front-body"
-              >
-
-
-                <!-- WATERMARK -->
-
-                <div
-                  class="discount-watermark"
-                >
-
-                  <span>
-                    hasani BOOKS
-                  </span>
-
-                  <span>
-                    hasani BOOKS
-                  </span>
-
-                  <span>
-                    hasani BOOKS
-                  </span>
-
-                  <span>
-                    hasani BOOKS
-                  </span>
-
-                  <span>
-                    hasani BOOKS
-                  </span>
-
-                  <span>
-                    hasani BOOKS
-                  </span>
-
-                  <span>
-                    hasani BOOKS
-                  </span>
-
-                  <span>
-                    hasani BOOKS
-                  </span>
-
-                  <span>
-                    hasani BOOKS
-                  </span>
-
-                  <span>
-                    hasani BOOKS
-                  </span>
-
+                <div class="qr-placeholder">
+                  <img
+                    id="qrImg"
+                    alt="Membership QR"
+                  >
                 </div>
 
-
-
-                <!-- CUSTOMER INFORMATION -->
-
-                <div
-                  class="discount-information"
-                >
-
-
-                  <!-- MEMBER NAME -->
-
-                  <div
-                    class="discount-field"
-                  >
-
-                    <label>
-                      MEMBER NAME
-                    </label>
-
-                    <strong
-                      id="discountCardName"
-                    >
-                      ARMS Customer
-                    </strong>
-
-                  </div>
-
-
-
-                  <!-- MEMBER ID -->
-
-                  <div
-                    class="discount-field"
-                  >
-
-                    <label>
-                      MEMBER ID
-                    </label>
-
-                    <strong
-                      id="discountCardMember"
-                    >
-                      000101020212
-                    </strong>
-
-                  </div>
-
-
-
-                  <!-- EXPIRY -->
-
-                  <div
-                    class="discount-field"
-                  >
-
-                    <label>
-                      EXPIRY DATE
-                    </label>
-
-                    <strong
-                      id="discountCardExpiry"
-                    >
-                      —
-                    </strong>
-
-                  </div>
-
-
-
-                  <!-- ISSUE BRANCH -->
-
-                  <div
-                    class="discount-field"
-                  >
-
-                    <label>
-                      ISSUE BRANCH
-                    </label>
-
-                    <strong
-                      id="discountCardIssueBranch"
-                    >
-                      —
-                    </strong>
-
-                  </div>
-
-
-                </div>
-
-
-
-                <!-- BARCODE -->
-
-                <div
-                  class="discount-barcode-box"
-                >
+                <div>
 
                   <img
                     id="barcodeImg"
@@ -645,935 +381,604 @@
 
                 </div>
 
-
               </div>
 
             </div>
 
 
+            <!-- =================================================
+                 MEMBER 2 TEACHER PRIVILEGE CARD
+                 ================================================= -->
 
             <div
-              class="discount-card-label"
-            >
-              FRONT
-            </div>
-
-
-          </div>
-
-
-
-          <!-- ===============================================
-               BACK CARD
-               =============================================== -->
-
-          <div
-            class="discount-card-wrap"
-          >
-
-
-            <div
-              class="discount-card discount-back"
+              id="member2Card"
+              class="member2-card hidden"
             >
 
+              <div class="member2-front-top"></div>
 
-              <!-- BLUE HEADER -->
+              <div class="member2-front-bottom"></div>
 
-              <div
-                class="discount-back-header"
+              <div class="member2-front-transition"></div>
+
+
+              <!-- REAL HASANI BOOKS LOGO -->
+
+              <img
+                class="member2-logo"
+                src="assets/hasani-books-logo.jpg"
+                alt="Hasani Books"
               >
 
 
-                <!-- SOCIAL INFORMATION -->
-
-                <div
-                  class="back-social-area"
-                >
+              <div class="member2-title">
+                TEACHER PRIVILEGE CARD
+              </div>
 
 
-                  <div
-                    class="back-social-icons"
-                  >
+              <div class="member2-information">
 
+                <div class="member2-field member2-name">
 
-                    <a
-                      href="#"
-                      class="back-social facebook"
-                      target="_blank"
-                      rel="noopener"
-                      aria-label="Facebook"
-                    >
+                  <label>
+                    MEMBER NAME
+                  </label>
 
-                      <i
-                        class="fa-brands fa-facebook-f"
-                      ></i>
-
-                    </a>
-
-
-                    <a
-                      href="#"
-                      class="back-social instagram"
-                      target="_blank"
-                      rel="noopener"
-                      aria-label="Instagram"
-                    >
-
-                      <i
-                        class="fa-brands fa-instagram"
-                      ></i>
-
-                    </a>
-
-
-                    <a
-                      href="#"
-                      class="back-social tiktok"
-                      target="_blank"
-                      rel="noopener"
-                      aria-label="TikTok"
-                    >
-
-                      <i
-                        class="fa-brands fa-tiktok"
-                      ></i>
-
-                    </a>
-
-
-                    <a
-                      href="#"
-                      class="back-social whatsapp"
-                      target="_blank"
-                      rel="noopener"
-                      aria-label="WhatsApp"
-                    >
-
-                      <i
-                        class="fa-brands fa-whatsapp"
-                      ></i>
-
-                    </a>
-
-
-                  </div>
-
-
-                  <strong>
-                    hasaniBOOKS
+                  <strong id="member2CardName">
+                    —
                   </strong>
 
-
-                  <span>
-                    |
-                  </span>
+                </div>
 
 
-                  <strong>
-                    +60 19-475 7733
+                <div class="member2-field member2-expiry">
+
+                  <label>
+                    EXPIRY DATE
+                  </label>
+
+                  <strong id="member2CardExpiry">
+                    —
                   </strong>
 
+                </div>
+
+
+                <div class="member2-field member2-id">
+
+                  <label>
+                    MEMBER ID
+                  </label>
+
+                  <strong id="member2CardMember">
+                    —
+                  </strong>
 
                 </div>
 
 
+                <div class="member2-field member2-branch">
 
-                <!-- BACK LOGO -->
+                  <label>
+                    ISSUE BRANCH
+                  </label>
 
-                <div
-                  class="back-logo"
-                >
-
-                  <img
-                    src="assets/hasani-books-logo.jpg"
-                    alt="Hasani Books"
-                  >
+                  <strong id="member2CardIssueBranch">
+                    —
+                  </strong>
 
                 </div>
-
 
               </div>
 
 
+              <div class="member2-barcode">
 
-              <!-- RED DIVIDER -->
-
-              <div
-                class="discount-back-red-line"
-              ></div>
-
-
-
-              <!-- TERMS -->
-
-              <div
-                class="discount-back-content"
-              >
-
-
-                <div
-                  class="discount-rule"
+                <img
+                  id="member2BarcodeImg"
+                  alt="Membership barcode"
                 >
-                  Kad ini bukan kad kredit.
-                </div>
-
-
-                <div
-                  class="discount-rule"
-                >
-                  Kad ini tidak boleh ditunaikan.
-                </div>
-
-
-                <div
-                  class="discount-rule"
-                >
-                  Pemilik kad ini boleh mendapat diskaun bagi buku dan alat tulis yang terpilih sahaja.
-                </div>
-
-
-                <div
-                  class="discount-rule"
-                >
-                  Sila gunakan kad ini di semua cawangan Hasani Books untuk menikmati potongan diskaun.
-                </div>
-
-
-                <div
-                  class="discount-rule"
-                >
-                  Kad ini hak milik Hasani Books.
-                </div>
-
-
-                <div
-                  class="discount-rule"
-                >
-                  Kegunaannya adalah tertakluk kepada syarat &amp; peraturan yang lazim digunakan. Jika terjumpa, sila kembalikan kad ini kepada Hasani Books.
-                </div>
-
 
               </div>
 
+            </div>
+
+          </div>
 
 
-              <!-- VERTICAL MEMBER CARD LABEL -->
+          <!-- =================================================
+               STATS
+               ================================================= -->
 
-              <div
-                class="discount-vertical"
-              >
-                MEMBER DISCOUNT CARD
-              </div>
+          <div class="stat-grid">
 
+            <div class="stat-card">
 
+              <span>
+                Available Points
+              </span>
 
-              <!-- FOOTER -->
+              <strong id="dashPoints">
+                0
+              </strong>
 
-              <div
-                class="discount-back-footer"
-              >
-
-                <strong>
-                  Hasani Edar Sdn. Bhd.
-                </strong>
-
-                <span>
-                  41A–47A, Jalan Pengkalan, Taman Pekan Baru,
-                </span>
-
-                <span>
-                  08000 Sungai Petani, Kedah Darul Aman.
-                </span>
-
-              </div>
-
+              <small>
+                Member points
+              </small>
 
             </div>
 
 
+            <div class="stat-card">
 
-            <div
-              class="discount-card-label"
-            >
-              BACK
+              <span>
+                Total Purchase
+              </span>
+
+              <strong id="dashSpend">
+                RM 0.00
+              </strong>
+
+              <small>
+                Verified transaction data
+              </small>
+
             </div>
 
 
-          </div>
+            <div class="stat-card">
 
+              <span>
+                Transactions
+              </span>
 
-        </div>
+              <strong id="dashTransactions">
+                0
+              </strong>
 
+              <small>
+                Loaded purchase records
+              </small>
 
-
-        <!-- =================================================
-             DASHBOARD STATISTICS
-             ================================================= -->
-
-        <div
-          class="stat-grid"
-        >
-
-
-          <div
-            class="stat-card"
-          >
-
-            <span>
-              Available Points
-            </span>
-
-            <strong
-              id="dashPoints"
-            >
-              0
-            </strong>
-
-            <small>
-              Member points
-            </small>
+            </div>
 
           </div>
 
 
-          <div
-            class="stat-card"
-          >
+          <!-- =================================================
+               QUICK ACCESS
+               ================================================= -->
 
-            <span>
-              Total Purchase
-            </span>
-
-            <strong
-              id="dashSpend"
-            >
-              RM 0.00
-            </strong>
-
-            <small>
-              Verified transaction data
-            </small>
-
+          <div class="section-title">
+            <h2>
+              Quick Access
+            </h2>
           </div>
 
 
-          <div
-            class="stat-card"
-          >
+          <div class="feature-grid">
 
-            <span>
-              Transactions
-            </span>
-
-            <strong
-              id="dashTransactions"
+            <button
+              class="feature-card"
+              data-view="points"
+              type="button"
             >
-              0
-            </strong>
+              <b>
+                ★ Member Points
+              </b>
 
-            <small>
-              Loaded purchase records
-            </small>
+              <span>
+                See points earned from purchases.
+              </span>
+            </button>
+
+
+            <button
+              class="feature-card"
+              data-view="rewards"
+              type="button"
+            >
+              <b>
+                🎁 Rewards
+              </b>
+
+              <span>
+                View available member rewards.
+              </span>
+            </button>
+
+
+            <button
+              class="feature-card"
+              data-view="offers"
+              type="button"
+            >
+              <b>
+                🏷 Offers
+              </b>
+
+              <span>
+                Explore member offers.
+              </span>
+            </button>
+
+
+            <button
+              class="feature-card"
+              data-view="store"
+              type="button"
+            >
+              <b>
+                🛒 Online Store
+              </b>
+
+              <span>
+                Continue to online shopping.
+              </span>
+            </button>
+
+
+            <button
+              class="feature-card"
+              data-view="locations"
+              type="button"
+            >
+              <b>
+                ⌖ Locations
+              </b>
+
+              <span>
+                Find Hasani locations.
+              </span>
+            </button>
 
           </div>
 
-
-        </div>
-
+        </section>
 
 
-        <!-- =================================================
-             QUICK ACCESS
-             ================================================= -->
+        <!-- ===================================================
+             PURCHASES
+             =================================================== -->
 
-        <div
-          class="section-title"
+        <section
+          id="view-purchases"
+          class="view hidden"
         >
 
-          <h2>
-            Quick Access
-          </h2>
+          <div class="page-heading">
 
-        </div>
-
-
-        <div
-          class="feature-grid"
-        >
-
-
-          <button
-            class="feature-card"
-            data-view="points"
-            type="button"
-          >
-
-            <b>
-              ★ Member Points
-            </b>
-
-            <span>
-              See points earned from purchases.
-            </span>
-
-          </button>
-
-
-          <button
-            class="feature-card"
-            data-view="rewards"
-            type="button"
-          >
-
-            <b>
-              🎁 Rewards
-            </b>
-
-            <span>
-              View available member rewards.
-            </span>
-
-          </button>
-
-
-          <button
-            class="feature-card"
-            data-view="offers"
-            type="button"
-          >
-
-            <b>
-              🏷 Offers
-            </b>
-
-            <span>
-              Explore member offers.
-            </span>
-
-          </button>
-
-
-          <button
-            class="feature-card"
-            data-view="store"
-            type="button"
-          >
-
-            <b>
-              🛒 Online Store
-            </b>
-
-            <span>
-              Continue to online shopping.
-            </span>
-
-          </button>
-
-
-          <button
-            class="feature-card"
-            data-view="locations"
-            type="button"
-          >
-
-            <b>
-              ⌖ Locations
-            </b>
-
-            <span>
-              Find Hasani locations.
-            </span>
-
-          </button>
-
-
-        </div>
-
-
-      </section>
-
-
-
-      <!-- ===================================================
-           PURCHASE HISTORY
-           =================================================== -->
-
-      <section
-        id="view-purchases"
-        class="view hidden"
-      >
-
-
-        <!-- PURCHASE LIST -->
-
-        <div
-          id="purchaseHistoryView"
-        >
-
-
-          <div
-            class="page-heading"
-          >
-
-            <span
-              class="eyebrow"
-            >
+            <span class="eyebrow">
               MEMBER ACTIVITY
             </span>
-
 
             <h1>
               Purchase History
             </h1>
 
-
             <p>
-              Click a purchase to see the items purchased.
+              Transactions associated with your membership.
             </p>
 
           </div>
-
 
           <div
             id="purchaseList"
             class="purchase-list"
           ></div>
 
-
-        </div>
-
+        </section>
 
 
-        <!-- PURCHASE DETAIL CONTAINER -->
+        <!-- ===================================================
+             PURCHASE DETAIL
+             =================================================== -->
 
-        <div
+        <section
           id="purchaseDetailView"
-          class="hidden"
+          class="view hidden"
         >
+
+          <div
+            id="purchaseDetail"
+          ></div>
+
+        </section>
+
+
+        <!-- ===================================================
+             POINTS
+             =================================================== -->
+
+        <section
+          id="view-points"
+          class="view hidden"
+        >
+
+          <div class="page-heading">
+
+            <span class="eyebrow">
+              LOYALTY
+            </span>
+
+            <h1>
+              Member Points
+            </h1>
+
+            <p>
+              Track purchase value and points earned.
+            </p>
+
+          </div>
+
+
+          <div class="points-hero">
+
+            <div>
+
+              <span>
+                Current Points
+              </span>
+
+              <strong id="pointsBig">
+                0
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Verified Purchase Value
+              </span>
+
+              <strong id="pointsSpend">
+                RM 0.00
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Points Earned
+              </span>
+
+              <strong id="pointsEarned">
+                0
+              </strong>
+
+            </div>
+
+          </div>
 
 
           <div
-            class="page-heading"
-          >
+            id="pointsRows"
+            class="simple-table"
+          ></div>
 
-            <span
-              class="eyebrow"
-            >
-              PURCHASE DETAILS
+        </section>
+
+
+        <!-- ===================================================
+             PERSONAL
+             =================================================== -->
+
+        <section
+          id="view-personal"
+          class="view hidden"
+        >
+
+          <div class="page-heading">
+
+            <span class="eyebrow">
+              ARMS MEMBER
             </span>
 
-
             <h1>
-              Purchase Details
+              Personal Information
             </h1>
 
-
             <p>
-              Items included in this transaction.
+              Member information returned from ARMS.
             </p>
 
           </div>
 
 
           <div
-            id="purchaseDetail"
+            id="personalInfoGrid"
+            class="personal-info-grid"
           ></div>
 
-
-        </div>
-
-
-      </section>
+        </section>
 
 
+        <!-- ===================================================
+             REWARDS
+             =================================================== -->
 
-      <!-- ===================================================
-           MEMBER POINTS
-           =================================================== -->
-
-      <section
-        id="view-points"
-        class="view hidden"
-      >
-
-
-        <div
-          class="page-heading"
+        <section
+          id="view-rewards"
+          class="view hidden"
         >
 
-          <span
-            class="eyebrow"
-          >
-            LOYALTY
-          </span>
+          <div class="page-heading">
 
-
-          <h1>
-            Member Points
-          </h1>
-
-
-          <p>
-            Track purchase value and points earned.
-          </p>
-
-        </div>
-
-
-
-        <div
-          class="points-hero"
-        >
-
-
-          <div>
-
-            <span>
-              Current Points
+            <span class="eyebrow">
+              MEMBERSHIP BENEFITS
             </span>
 
-            <strong
-              id="pointsBig"
-            >
-              0
-            </strong>
+            <h1>
+              Rewards
+            </h1>
+
+            <p>
+              Rewards available for your membership.
+            </p>
 
           </div>
-
-
-          <div>
-
-            <span>
-              Verified Purchase Value
-            </span>
-
-            <strong
-              id="pointsSpend"
-            >
-              RM 0.00
-            </strong>
-
-          </div>
-
-
-          <div>
-
-            <span>
-              Points Earned
-            </span>
-
-            <strong
-              id="pointsEarned"
-            >
-              0
-            </strong>
-
-          </div>
-
-
-        </div>
-
-
-
-        <div
-          id="pointsRows"
-          class="simple-table"
-        ></div>
-
-
-      </section>
-
-
-
-      <!-- ===================================================
-           PERSONAL INFORMATION
-           =================================================== -->
-
-      <section
-        id="view-personal"
-        class="view hidden"
-      >
-
-
-        <div
-          class="page-heading"
-        >
-
-          <span
-            class="eyebrow"
-          >
-            ARMS MEMBER
-          </span>
-
-
-          <h1>
-            Personal Information
-          </h1>
-
-
-          <p>
-            Member information returned from the ARMS member listing.
-          </p>
-
-        </div>
-
-
-        <div
-          id="personalInfoGrid"
-          class="personal-info-grid"
-        ></div>
-
-
-      </section>
-
-
-
-      <!-- ===================================================
-           REWARDS
-           =================================================== -->
-
-      <section
-        id="view-rewards"
-        class="view hidden"
-      >
-
-
-        <div
-          class="page-heading"
-        >
-
-          <span
-            class="eyebrow"
-          >
-            MEMBERSHIP BENEFITS
-          </span>
-
-
-          <h1>
-            Rewards
-          </h1>
-
-
-          <p>
-            Rewards available for your membership.
-          </p>
-
-        </div>
-
-
-        <div
-          id="rewardsGrid"
-          class="feature-grid"
-        ></div>
-
-
-      </section>
-
-
-
-      <!-- ===================================================
-           OFFERS
-           =================================================== -->
-
-      <section
-        id="view-offers"
-        class="view hidden"
-      >
-
-
-        <div
-          class="page-heading"
-        >
-
-          <span
-            class="eyebrow"
-          >
-            SPECIAL OFFERS
-          </span>
-
-
-          <h1>
-            Offers
-          </h1>
-
-
-          <p>
-            Member offers and promotions.
-          </p>
-
-        </div>
-
-
-        <div
-          id="offersGrid"
-          class="feature-grid"
-        ></div>
-
-
-      </section>
-
-
-
-      <!-- ===================================================
-           ONLINE STORE
-           =================================================== -->
-
-      <section
-        id="view-store"
-        class="view hidden"
-      >
-
-
-        <div
-          class="page-heading"
-        >
-
-          <span
-            class="eyebrow"
-          >
-            SHOP ONLINE
-          </span>
-
-
-          <h1>
-            Online Store
-          </h1>
-
-
-          <p>
-            Hasani Books online store.
-          </p>
-
-        </div>
-
-
-        <div
-          class="empty-feature"
-        >
 
 
           <div
-            class="big-icon"
-          >
-            🛒
+            id="rewardsGrid"
+            class="feature-grid"
+          ></div>
+
+        </section>
+
+
+        <!-- ===================================================
+             OFFERS
+             =================================================== -->
+
+        <section
+          id="view-offers"
+          class="view hidden"
+        >
+
+          <div class="page-heading">
+
+            <span class="eyebrow">
+              SPECIAL OFFERS
+            </span>
+
+            <h1>
+              Offers
+            </h1>
+
+            <p>
+              Member offers and promotions.
+            </p>
+
           </div>
-
-
-          <h2>
-            Hasani Books Online Store
-          </h2>
-
-
-          <p>
-            Continue to the official Hasani Books online store.
-          </p>
-
-
-          <button
-            id="openStoreBtn"
-            class="primary"
-            type="button"
-          >
-            Shop Online
-          </button>
-
-
-        </div>
-
-
-      </section>
-
-
-
-      <!-- ===================================================
-           LOCATIONS
-           =================================================== -->
-
-      <section
-        id="view-locations"
-        class="view hidden"
-      >
-
-
-        <div
-          class="page-heading"
-        >
-
-          <span
-            class="eyebrow"
-          >
-            FIND US
-          </span>
-
-
-          <h1>
-            Locations
-          </h1>
-
-
-          <p>
-            Find Hasani Books branches.
-          </p>
-
-        </div>
-
-
-        <div
-          class="empty-feature"
-        >
 
 
           <div
-            class="big-icon"
-          >
-            ⌖
+            id="offersGrid"
+            class="feature-grid"
+          ></div>
+
+        </section>
+
+
+        <!-- ===================================================
+             STORE
+             =================================================== -->
+
+        <section
+          id="view-store"
+          class="view hidden"
+        >
+
+          <div class="page-heading">
+
+            <span class="eyebrow">
+              SHOP ONLINE
+            </span>
+
+            <h1>
+              Online Store
+            </h1>
+
+            <p>
+              Online shopping access.
+            </p>
+
           </div>
 
 
-          <h2>
-            Hasani Books Store Locations
-          </h2>
+          <div class="empty-feature">
+
+            <div class="big-icon">
+              🛒
+            </div>
+
+            <h2>
+              Hasani Books Online Store
+            </h2>
+
+            <p>
+              Continue shopping at the official
+              Hasani Books online store.
+            </p>
+
+            <button
+              id="openStoreBtn"
+              class="primary"
+              type="button"
+            >
+              Shop Online
+            </button>
+
+          </div>
+
+        </section>
 
 
-          <p>
-            Open the official Hasani Books store locator.
-          </p>
+        <!-- ===================================================
+             LOCATIONS
+             =================================================== -->
+
+        <section
+          id="view-locations"
+          class="view hidden"
+        >
+
+          <div class="page-heading">
+
+            <span class="eyebrow">
+              FIND US
+            </span>
+
+            <h1>
+              Locations
+            </h1>
+
+            <p>
+              Find Hasani Books branches.
+            </p>
+
+          </div>
 
 
-          <button
-            id="openLocationsBtn"
-            class="primary"
-            type="button"
-          >
-            Find Locations
-          </button>
+          <div class="empty-feature">
 
+            <div class="big-icon">
+              ⌖
+            </div>
 
-        </div>
+            <h2>
+              Hasani Books Locations
+            </h2>
 
+            <p>
+              Find Hasani Books stores and branches.
+            </p>
 
-      </section>
+            <button
+              id="openLocationsBtn"
+              class="primary"
+              type="button"
+            >
+              Find a Store
+            </button>
 
+          </div>
 
-    </main>
+        </section>
 
+      </main>
+
+    </div>
 
   </div>
 
 
-</div>
-
-
-
-<!-- =========================================================
-     JAVASCRIPT
-     ========================================================= -->
-
-<script
-  src="js/app.js?v=20260816-05"
-></script>
-
+  <script src="js/app.js"></script>
 
 </body>
-
 </html>
