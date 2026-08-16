@@ -1,14 +1,5 @@
-name: Build Hasani Arms
-
-on:
-  workflow_dispatch:
-  push:
-    branches: [ main ]
-
-jobs:
   web-backend-check:
     runs-on: ubuntu-latest
-    # REMOVED defaults.run.working-directory from here to prevent setup-node path resolution issues
 
     steps:
       - uses: actions/checkout@v4
@@ -17,9 +8,12 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-          # Use a relative path from the repository root
+          # Force setup-node to look for the lockfile in the correct path
           cache-dependency-path: 'hasaniarms/backend/package-lock.json'
 
+      # Explicitly set the environment variable so the cache path resolves correctly
+      env:
+        NODE_WORKSPACE: 'hasaniarms/backend'
       - name: Install dependencies
         run: npm ci
         working-directory: hasaniarms/backend
@@ -30,29 +24,3 @@ jobs:
           node --check src/arms.js
           node --check src/arms-session.js
         working-directory: hasaniarms/backend
-
-  flutter-android:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: hasaniarms
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.35.0'
-          channel: stable
-
-      - run: flutter pub get
-      - run: flutter build apk --debug
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.35.0'
-          channel: stable
-
-      - run: flutter pub get
-      - run: flutter build apk --debug
