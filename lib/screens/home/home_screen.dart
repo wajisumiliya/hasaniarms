@@ -34,7 +34,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> login() async {
-    if (loading) return;
+    if (loading) {
+      return;
+    }
 
     setState(() {
       loading = true;
@@ -52,11 +54,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final loggedCustomer = response['customer'];
 
-      if (loggedCustomer is! Map) {
-        throw Exception('Invalid customer data returned by server.');
+      if (loggedCustomer == null) {
+        throw Exception(
+          'Invalid customer data returned by server.',
+        );
       }
 
-      final customerData = Map<String, dynamic>.from(loggedCustomer);
+      final customerData =
+          Map<String, dynamic>.from(loggedCustomer);
 
       Map<String, dynamic> dashboardData = {};
 
@@ -64,15 +69,15 @@ class _HomeScreenState extends State<HomeScreen> {
         final dashboardResponse =
             await api.get('/api/customer/dashboard');
 
-        if (dashboardResponse is Map) {
-          dashboardData = Map<String, dynamic>.from(dashboardResponse);
-        }
+        dashboardData =
+            Map<String, dynamic>.from(dashboardResponse);
       } catch (_) {
-        // Dashboard is optional.
-        // Keep the customer logged in if login itself succeeded.
+        dashboardData = {};
       }
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         customer = customerData;
@@ -80,13 +85,17 @@ class _HomeScreenState extends State<HomeScreen> {
         errorMessage = null;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         errorMessage = e.toString();
       });
     } finally {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         loading = false;
@@ -96,18 +105,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> logout() async {
     try {
-      await api.post('/api/customer/logout', {});
-    } catch (_) {
-      // Ignore logout API errors.
-    }
+      await api.post(
+        '/api/customer/logout',
+        {},
+      );
+    } catch (_) {}
 
     try {
       await api.clearSession();
-    } catch (_) {
-      // Ignore local session cleanup errors.
-    }
+    } catch (_) {}
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       customer = null;
@@ -125,7 +135,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return value
         .whereType<Map>()
-        .map((item) => Map<String, dynamic>.from(item))
+        .map(
+          (item) => Map<String, dynamic>.from(item),
+        )
         .toList();
   }
 
@@ -136,7 +148,10 @@ class _HomeScreenState extends State<HomeScreen> {
       return value.toInt();
     }
 
-    return int.tryParse(value?.toString() ?? '0') ?? 0;
+    return int.tryParse(
+          value?.toString() ?? '0',
+        ) ??
+        0;
   }
 
   double get totalSpend {
@@ -148,7 +163,11 @@ class _HomeScreenState extends State<HomeScreen> {
       if (value is num) {
         total += value.toDouble();
       } else {
-        total += double.tryParse(value?.toString() ?? '0') ?? 0;
+        total +=
+            double.tryParse(
+              value?.toString() ?? '0',
+            ) ??
+            0;
       }
     }
 
@@ -180,7 +199,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.all(28),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Hasani Customer',
@@ -197,62 +217,69 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 26),
-
                       TextField(
                         controller: memberController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Membership Card Number',
-                          prefixIcon: Icon(Icons.badge_outlined),
-                          border: OutlineInputBorder(),
+                        keyboardType:
+                            TextInputType.number,
+                        decoration:
+                            const InputDecoration(
+                          labelText:
+                              'Membership Card Number',
+                          prefixIcon:
+                              Icon(Icons.badge_outlined),
+                          border:
+                              OutlineInputBorder(),
                         ),
                       ),
-
                       const SizedBox(height: 16),
-
                       TextField(
                         controller: passwordController,
                         obscureText: true,
-                        decoration: const InputDecoration(
+                        decoration:
+                            const InputDecoration(
                           labelText: 'Password',
-                          prefixIcon: Icon(Icons.lock_outline),
-                          border: OutlineInputBorder(),
+                          prefixIcon:
+                              Icon(Icons.lock_outline),
+                          border:
+                              OutlineInputBorder(),
                         ),
                       ),
-
                       const SizedBox(height: 20),
-
                       SizedBox(
                         width: double.infinity,
                         height: 50,
                         child: FilledButton(
-                          onPressed: loading ? null : login,
+                          onPressed:
+                              loading ? null : login,
                           child: Text(
-                            loading ? 'Signing in...' : 'Login',
+                            loading
+                                ? 'Signing in...'
+                                : 'Login',
                           ),
                         ),
                       ),
-
                       if (errorMessage != null) ...[
                         const SizedBox(height: 16),
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(12),
+                          padding:
+                              const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.red
+                                .withValues(alpha: 0.08),
+                            borderRadius:
+                                BorderRadius.circular(8),
                           ),
                           child: Text(
                             errorMessage!,
-                            style: const TextStyle(
+                            style:
+                                const TextStyle(
                               color: Colors.red,
                             ),
                           ),
                         ),
                       ],
-
                       const SizedBox(height: 18),
-
                       const Text(
                         'Initial test password: 123123',
                         style: TextStyle(
@@ -274,9 +301,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final name =
         customer?['name']?.toString() ?? 'Member';
 
-    final membership =
-        customer?['membership']?.toString() ?? '';
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Hasani Customer'),
@@ -288,13 +312,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-
       drawer: _buildDrawer(),
-
       body: RefreshIndicator(
         onRefresh: _refreshDashboard,
         child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
+          physics:
+              const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(18),
           children: [
             Text(
@@ -304,17 +327,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontWeight: FontWeight.w800,
               ),
             ),
-
             const SizedBox(height: 18),
-
-            _buildMemberCard(
-              customer ?? {},
-            ),
-
+            _buildMemberCard(customer ?? {}),
             const SizedBox(height: 16),
-
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: _buildStatCard(
@@ -323,9 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icons.stars,
                   ),
                 ),
-
                 const SizedBox(width: 10),
-
                 Expanded(
                   child: _buildStatCard(
                     'Purchase',
@@ -333,9 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icons.receipt_long,
                   ),
                 ),
-
                 const SizedBox(width: 10),
-
                 Expanded(
                   child: _buildStatCard(
                     'Transactions',
@@ -345,9 +359,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-
             const SizedBox(height: 22),
-
             _buildSection(
               'Quick Access',
               [
@@ -356,14 +368,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: 'Purchase History',
                   subtitle: 'View your purchases',
                   onTap: () {
-                    _showPurchases(context, purchases);
+                    _showPurchases(
+                      context,
+                      purchases,
+                    );
                   },
                 ),
-
                 _buildMenuTile(
                   icon: Icons.stars,
                   title: 'Member Points',
-                  subtitle: 'Points earned from purchases',
+                  subtitle:
+                      'Points earned from purchases',
                   onTap: () {
                     _showPoints(
                       context,
@@ -372,40 +387,48 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                 ),
-
                 _buildMenuTile(
                   icon: Icons.card_giftcard,
                   title: 'Rewards',
                   subtitle: 'Member rewards',
                   onTap: () {
-                    _showComingSoon(context, 'Rewards');
+                    _showComingSoon(
+                      context,
+                      'Rewards',
+                    );
                   },
                 ),
-
                 _buildMenuTile(
                   icon: Icons.local_offer,
                   title: 'Offers',
                   subtitle: 'Special member offers',
                   onTap: () {
-                    _showComingSoon(context, 'Offers');
+                    _showComingSoon(
+                      context,
+                      'Offers',
+                    );
                   },
                 ),
-
                 _buildMenuTile(
                   icon: Icons.shopping_cart,
                   title: 'Online Store',
                   subtitle: 'Shop online',
                   onTap: () {
-                    _showComingSoon(context, 'Online Store');
+                    _showComingSoon(
+                      context,
+                      'Online Store',
+                    );
                   },
                 ),
-
                 _buildMenuTile(
                   icon: Icons.location_on,
                   title: 'Locations',
                   subtitle: 'Find Hasani stores',
                   onTap: () {
-                    _showComingSoon(context, 'Locations');
+                    _showComingSoon(
+                      context,
+                      'Locations',
+                    );
                   },
                 ),
               ],
@@ -421,15 +444,18 @@ class _HomeScreenState extends State<HomeScreen> {
       final response =
           await api.get('/api/customer/dashboard');
 
-      if (!mounted) return;
-
-      if (response is Map) {
-        setState(() {
-          dashboard = Map<String, dynamic>.from(response);
-        });
+      if (!mounted) {
+        return;
       }
+
+      setState(() {
+        dashboard =
+            Map<String, dynamic>.from(response);
+      });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -449,7 +475,8 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             DrawerHeader(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   const Icon(
                     Icons.account_circle,
@@ -466,27 +493,34 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-
             ListTile(
-              leading: const Icon(Icons.dashboard),
-              title: const Text('Dashboard'),
+              leading:
+                  const Icon(Icons.dashboard),
+              title:
+                  const Text('Dashboard'),
               onTap: () {
                 Navigator.pop(context);
               },
             ),
-
             ListTile(
-              leading: const Icon(Icons.receipt_long),
-              title: const Text('Purchase History'),
+              leading: const Icon(
+                Icons.receipt_long,
+              ),
+              title:
+                  const Text('Purchase History'),
               onTap: () {
                 Navigator.pop(context);
-                _showPurchases(context, purchases);
+                _showPurchases(
+                  context,
+                  purchases,
+                );
               },
             ),
-
             ListTile(
-              leading: const Icon(Icons.stars),
-              title: const Text('Member Points'),
+              leading:
+                  const Icon(Icons.stars),
+              title:
+                  const Text('Member Points'),
               onTap: () {
                 Navigator.pop(context);
                 _showPoints(
@@ -496,32 +530,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-
             const ListTile(
-              leading: Icon(Icons.card_giftcard),
-              title: Text('Rewards'),
+              leading:
+                  Icon(Icons.card_giftcard),
+              title:
+                  Text('Rewards'),
             ),
-
             const ListTile(
-              leading: Icon(Icons.local_offer),
-              title: Text('Offers'),
+              leading:
+                  Icon(Icons.local_offer),
+              title:
+                  Text('Offers'),
             ),
-
             const ListTile(
-              leading: Icon(Icons.shopping_cart),
-              title: Text('Online Store'),
+              leading:
+                  Icon(Icons.shopping_cart),
+              title:
+                  Text('Online Store'),
             ),
-
             const ListTile(
-              leading: Icon(Icons.location_on),
-              title: Text('Locations'),
+              leading:
+                  Icon(Icons.location_on),
+              title:
+                  Text('Locations'),
             ),
-
             const Divider(),
-
             ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
+              leading:
+                  const Icon(Icons.logout),
+              title:
+                  const Text('Logout'),
               onTap: () async {
                 Navigator.pop(context);
                 await logout();
@@ -533,7 +571,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMemberCard(Map<String, dynamic> data) {
+  Widget _buildMemberCard(
+    Map<String, dynamic> data,
+  ) {
     final name =
         data['name']?.toString() ?? 'Member';
 
@@ -546,7 +586,8 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             const Text(
               'HASANI MEMBER',
@@ -556,9 +597,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 letterSpacing: 1.2,
               ),
             ),
-
             const SizedBox(height: 6),
-
             Text(
               name,
               style: const TextStyle(
@@ -567,9 +606,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 4),
-
             Text(
               membership,
               style: const TextStyle(
@@ -577,28 +614,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontSize: 15,
               ),
             ),
-
             const SizedBox(height: 18),
-
             Wrap(
               spacing: 14,
               runSpacing: 14,
               children: [
                 Container(
                   color: Colors.white,
-                  padding: const EdgeInsets.all(8),
+                  padding:
+                      const EdgeInsets.all(8),
                   child: QrImageView(
-                    data: 'HASANI-MEMBER:$membership',
+                    data:
+                        'HASANI-MEMBER:$membership',
                     size: 100,
                   ),
                 ),
-
                 Container(
                   width: 210,
                   color: Colors.white,
-                  padding: const EdgeInsets.all(8),
+                  padding:
+                      const EdgeInsets.all(8),
                   child: BarcodeWidget(
-                    barcode: Barcode.code128(),
+                    barcode:
+                        Barcode.code128(),
                     data: membership.isEmpty
                         ? 'HASANI'
                         : membership,
@@ -623,15 +661,14 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             Icon(
               icon,
               size: 22,
             ),
-
             const SizedBox(height: 8),
-
             Text(
               title,
               style: const TextStyle(
@@ -639,11 +676,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontSize: 12,
               ),
             ),
-
             const SizedBox(height: 5),
-
             FittedBox(
-              alignment: Alignment.centerLeft,
+              alignment:
+                  Alignment.centerLeft,
               fit: BoxFit.scaleDown,
               child: Text(
                 value,
@@ -664,7 +700,8 @@ class _HomeScreenState extends State<HomeScreen> {
     List<Widget> children,
   ) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         Text(
           title,
@@ -673,9 +710,7 @@ class _HomeScreenState extends State<HomeScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-
         const SizedBox(height: 10),
-
         ...children,
       ],
     );
@@ -692,9 +727,8 @@ class _HomeScreenState extends State<HomeScreen> {
         leading: Icon(icon),
         title: Text(title),
         subtitle: Text(subtitle),
-        trailing: const Icon(
-          Icons.chevron_right,
-        ),
+        trailing:
+            const Icon(Icons.chevron_right),
         onTap: onTap,
       ),
     );
@@ -712,20 +746,24 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: SizedBox(
-              height: MediaQuery.of(context).size.height * 0.75,
+              height:
+                  MediaQuery.of(context)
+                          .size
+                          .height *
+                      0.75,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   const Text(
                     'Purchase History',
                     style: TextStyle(
                       fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
                   if (purchaseList.isEmpty)
                     const Expanded(
                       child: Center(
@@ -736,14 +774,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     )
                   else
                     Expanded(
-                      child: ListView.builder(
-                        itemCount: purchaseList.length,
-                        itemBuilder: (context, index) {
+                      child:
+                          ListView.builder(
+                        itemCount:
+                            purchaseList.length,
+                        itemBuilder:
+                            (context, index) {
                           final purchase =
-                              purchaseList[index];
+                              purchaseList[
+                                  index];
 
                           final receipt =
-                              purchase['receiptNo']
+                              purchase[
+                                          'receiptNo']
                                       ?.toString() ??
                                   '-';
 
@@ -753,7 +796,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   '-';
 
                           final purchasePoints =
-                              purchase['points']
+                              purchase[
+                                          'points']
                                       ?.toString() ??
                                   '0';
 
@@ -768,10 +812,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 'Receipt #$receipt',
                               ),
                               subtitle: Text(
-                                '$date · +$purchasePoints points',
+                                '$date · +'
+                                '$purchasePoints points',
                               ),
                               trailing: Text(
-                                'RM ${totalValue.toStringAsFixed(2)}',
+                                'RM '
+                                '${totalValue.toStringAsFixed(2)}',
                               ),
                             ),
                           );
@@ -799,36 +845,34 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize:
+                  MainAxisSize.min,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 const Text(
                   'Member Points',
                   style: TextStyle(
                     fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                    fontWeight:
+                        FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 14),
-
                 Text(
-                  'Current points: $currentPoints',
+                  'Current points: '
+                  '$currentPoints',
                 ),
-
                 const SizedBox(height: 8),
-
                 Text(
                   'Verified purchase value: '
                   'RM ${spend.toStringAsFixed(2)}',
                 ),
-
                 const SizedBox(height: 8),
-
                 Text(
-                  'Points earned: $currentPoints',
+                  'Points earned: '
+                  '$currentPoints',
                 ),
-
                 const SizedBox(height: 20),
               ],
             ),
@@ -842,7 +886,8 @@ class _HomeScreenState extends State<HomeScreen> {
     BuildContext context,
     String feature,
   ) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
       SnackBar(
         content: Text(
           '$feature will be available soon.',
