@@ -2,10 +2,7 @@
    HASANI BOOKS CUSTOMER WEB APP
    COMPLETE UPDATED APP.JS
    ============================================================ */
-const API = (
-  new URLSearchParams(window.location.search).get("api") ||
-  window.location.origin
-).replace(/\/$/, "");
+const API_URL = "https://hasaniarms.onrender.com";
 
 const APP_VERSION =
   "20260817-MEMBER2-TEACHER-CARD";
