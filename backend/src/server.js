@@ -17,26 +17,11 @@ const app = express();
 
 /*
 |--------------------------------------------------------------------------
-| TRUST RENDER REVERSE PROXY
-|--------------------------------------------------------------------------
-|
-| Render runs Node/Express behind a reverse proxy.
-|
-| This is REQUIRED when using secure Express session cookies on Render.
-|
-*/
-
-app.set("trust proxy", 1);
-
-/*
-|--------------------------------------------------------------------------
 | PORT
 |--------------------------------------------------------------------------
 */
 
-const port = Number(
-  process.env.PORT || 5000
-);
+const port = Number(process.env.PORT || 5000);
 
 /*
 |--------------------------------------------------------------------------
@@ -44,17 +29,10 @@ const port = Number(
 |--------------------------------------------------------------------------
 */
 
-const __filename =
-  fileURLToPath(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const __dirname =
-  path.dirname(__filename);
-
-const webPath =
-  path.resolve(
-    __dirname,
-    "../../web"
-  );
+const webPath = path.resolve(__dirname, "../../web");
 
 /*
 |--------------------------------------------------------------------------
@@ -67,12 +45,22 @@ const cookieName =
   "hasani_customer_sid";
 
 const CUSTOMER_PASSWORD =
-  process.env.CUSTOMER_PASSWORD ||
-  "123123";
+  process.env.CUSTOMER_PASSWORD || "123123";
 
 const SESSION_SECRET =
   process.env.CUSTOMER_SESSION_SECRET ||
-  "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET";
+  "HASANI_CUSTOMER_SESSION_SECRET_CHANGE_ME_2026";
+
+/*
+|--------------------------------------------------------------------------
+| RENDER / PROXY
+|--------------------------------------------------------------------------
+|
+| Render sits behind a reverse proxy.
+|
+*/
+
+app.set("trust proxy", 1);
 
 /*
 |--------------------------------------------------------------------------
@@ -89,40 +77,14 @@ app.use(
 
 /*
 |--------------------------------------------------------------------------
-| BASIC MIDDLEWARE
+| BODY PARSER
 |--------------------------------------------------------------------------
 */
 
 app.use(
   express.json({
-    limit: "1mb"
+    limit: "2mb"
   })
-);
-
-/*
-|--------------------------------------------------------------------------
-| NO-CACHE API RESPONSES
-|--------------------------------------------------------------------------
-|
-| Prevent browsers/proxies from caching login/session responses.
-|
-*/
-
-app.use(
-  "/api",
-  (_req, res, next) => {
-    res.setHeader(
-      "Cache-Control",
-      "no-store, no-cache, must-revalidate, private"
-    );
-
-    res.setHeader(
-      "Pragma",
-      "no-cache"
-    );
-
-    next();
-  }
 );
 
 /*
@@ -131,47 +93,70 @@ app.use(
 |--------------------------------------------------------------------------
 */
 
-app.use(
-  session({
-    name: cookieName,
+const sessionMiddleware = session({
+  name: cookieName,
 
-    secret: SESSION_SECRET,
+  secret: SESSION_SECRET,
 
-    resave: false,
+  resave: false,
 
-    saveUninitialized: false,
+  saveUninitialized: false,
 
-    rolling: true,
+  rolling: true,
 
-    cookie: {
-      httpOnly: true,
+  cookie: {
+    httpOnly: true,
 
-      /*
-       * Flutter sends the Cookie header directly.
-       * "lax" is safe for the web frontend too.
-       */
-      sameSite:
-        process.env.COOKIE_SAMESITE ||
-        "lax",
+    secure:
+      process.env.NODE_ENV === "production",
 
-      /*
-       * Render uses HTTPS in production.
-       * trust proxy above allows Express to correctly
-       * recognize the HTTPS connection.
-       */
-      secure:
-        process.env.NODE_ENV ===
-        "production",
+    sameSite:
+      process.env.COOKIE_SAMESITE || "lax",
 
-      path: "/",
+    path: "/",
 
-      maxAge: Number(
-        process.env.CUSTOMER_SESSION_MAX_AGE_MS ||
-        28800000
-      )
-    }
-  })
-);
+    maxAge: Number(
+      process.env.CUSTOMER_SESSION_MAX_AGE_MS ||
+        8 * 60 * 60 * 1000
+    )
+  }
+});
+
+/*
+|--------------------------------------------------------------------------
+| APPLY SESSION
+|--------------------------------------------------------------------------
+*/
+
+app.use(sessionMiddleware);
+
+/*
+|--------------------------------------------------------------------------
+| SESSION SAFETY MIDDLEWARE
+|--------------------------------------------------------------------------
+|
+| This prevents:
+|
+| Cannot set properties of undefined
+| (setting 'customer')
+|
+*/
+
+app.use((req, res, next) => {
+  if (!req.session) {
+    console.error(
+      "[SESSION] Express session was not created."
+    );
+
+    return res.status(500).json({
+      ok: false,
+      error:
+        "Customer session service is unavailable."
+    });
+  }
+
+  next();
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -179,18 +164,16 @@ app.use(
 |--------------------------------------------------------------------------
 */
 
-app.use(
-  (req, _res, next) => {
-    console.log(
-      `[${new Date().toISOString()}] ` +
-        `${req.method} ${req.originalUrl} ` +
-        `origin=${req.headers.origin || "none"} ` +
-        `user-agent=${req.headers["user-agent"] || "unknown"}`
-    );
+app.use((req, _res, next) => {
+  console.log(
+    `[${new Date().toISOString()}] ` +
+      `${req.method} ${req.originalUrl} ` +
+      `origin=${req.headers.origin || "none"} ` +
+      `session=${req.sessionID || "none"}`
+  );
 
-    next();
-  }
-);
+  next();
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -198,15 +181,14 @@ app.use(
 |--------------------------------------------------------------------------
 */
 
-const requireCustomer = (
-  req,
-  res,
-  next
-) => {
-  if (!req.session?.customer) {
+const requireCustomer = (req, res, next) => {
+  if (
+    !req.session ||
+    !req.session.customer
+  ) {
     return res.status(401).json({
       ok: false,
-
+      authenticated: false,
       error:
         "Customer session expired. Please log in again."
     });
@@ -216,38 +198,38 @@ const requireCustomer = (
 };
 
 const saveSession = (req) =>
-  new Promise(
-    (resolve, reject) => {
-      req.session.save(
-        (error) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve();
-          }
-        }
+  new Promise((resolve, reject) => {
+    if (!req.session) {
+      return reject(
+        new Error(
+          "Express customer session is unavailable."
+        )
       );
     }
-  );
+
+    req.session.save((error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
 
 const destroySession = (req) =>
-  new Promise(
-    (resolve, reject) => {
-      if (!req.session) {
-        return resolve();
-      }
-
-      req.session.destroy(
-        (error) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve();
-          }
-        }
-      );
+  new Promise((resolve, reject) => {
+    if (!req.session) {
+      return resolve();
     }
-  );
+
+    req.session.destroy((error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
 
 /*
 |--------------------------------------------------------------------------
@@ -256,8 +238,7 @@ const destroySession = (req) =>
 */
 
 function cleanDisplayName(value) {
-  let name =
-    String(value || "").trim();
+  let name = String(value || "").trim();
 
   if (
     !name ||
@@ -281,14 +262,8 @@ function cleanDisplayName(value) {
       /^\s*(?:kb|kg)\s+/i,
       ""
     )
-    .replace(
-      /^\s*:\s*/,
-      ""
-    )
-    .replace(
-      /\s+/g,
-      " "
-    )
+    .replace(/^\s*:\s*/, "")
+    .replace(/\s+/g, " ")
     .trim();
 
   return name || null;
@@ -320,10 +295,7 @@ function firstValue(...values) {
   return null;
 }
 
-function personal(
-  live,
-  member
-) {
+function personal(live, member) {
   member = member || {};
 
   const arms =
@@ -471,13 +443,12 @@ function personal(
       member.verified_by ||
       null,
 
-    points:
-      Number(
-        arms.points ??
+    points: Number(
+      arms.points ??
         live?.points ??
         member.points ??
         0
-      ),
+    ),
 
     pointsUpdate:
       arms.pointsUpdate ||
@@ -494,51 +465,39 @@ function personal(
 |--------------------------------------------------------------------------
 */
 
-app.get(
-  "/health",
-  (_req, res) => {
-    res.json({
-      ok: true,
+app.get("/health", (_req, res) => {
+  res.json({
+    ok: true,
 
-      service:
-        "hasani-arms-customer-api",
+    service:
+      "hasani-arms-customer-api",
 
-      version:
-        "7.4.1",
+    version: "7.5.0",
 
-      port,
+    port,
 
-      environment:
-        process.env.NODE_ENV ||
-        "development",
+    environment:
+      process.env.NODE_ENV ||
+      "development",
 
-      armsConfigured:
-        Boolean(
-          process.env.ARMS_USERNAME &&
-          process.env.ARMS_PASSWORD
-        ),
+    sessionMiddleware: true,
 
-      armsBaseUrl:
-        process.env.ARMS_BASE_URL ||
-        "https://hasani.arms.com.my",
+    armsConfigured:
+      Boolean(
+        process.env.ARMS_USERNAME &&
+        process.env.ARMS_PASSWORD
+      ),
 
-      historyConfigured:
-        Boolean(
-          process.env.ARMS_HISTORY_URL_TEMPLATE
-        ),
+    armsBaseUrl:
+      process.env.ARMS_BASE_URL ||
+      "https://hasani.arms.com.my",
 
-      sessionConfigured:
-        Boolean(
-          SESSION_SECRET &&
-          SESSION_SECRET !==
-            "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET"
-        ),
-
-      trustProxy:
-        true
-    });
-  }
-);
+    historyConfigured:
+      Boolean(
+        process.env.ARMS_HISTORY_URL_TEMPLATE
+      )
+  });
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -546,61 +505,40 @@ app.get(
 |--------------------------------------------------------------------------
 */
 
-app.get(
-  "/api/test",
-  (_req, res) => {
-    res.json({
-      ok: true,
+app.get("/api/test", (_req, res) => {
+  res.json({
+    ok: true,
 
-      service:
-        "hasani-arms-customer-api",
+    service:
+      "hasani-arms-customer-api",
 
-      version:
-        "7.4.1",
+    version: "7.5.0",
 
-      message:
-        "Hasani ARMS backend is reachable."
-    });
-  }
-);
+    message:
+      "Hasani ARMS backend is reachable."
+  });
+});
 
 /*
 |--------------------------------------------------------------------------
-| SESSION DEBUG
+| SESSION TEST
 |--------------------------------------------------------------------------
-|
-| This endpoint does NOT expose the session ID.
-| It only tells us whether Express sees a customer session.
-|
 */
 
-app.get(
-  "/api/customer/session-status",
-  (req, res) => {
-    res.json({
-      ok: true,
+app.get("/api/session-test", (req, res) => {
+  res.json({
+    ok: true,
 
-      authenticated:
-        Boolean(
-          req.session?.customer
-        ),
+    sessionAvailable:
+      Boolean(req.session),
 
-      sessionExists:
-        Boolean(req.session),
+    sessionId:
+      req.sessionID || null,
 
-      customer:
-        req.session?.customer
-          ? {
-              membership:
-                req.session.customer.membership,
-
-              name:
-                req.session.customer.name
-            }
-          : null
-    });
-  }
-);
+    authenticated:
+      Boolean(req.session?.customer)
+  });
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -613,53 +551,26 @@ app.post(
   async (req, res) => {
     const membership =
       String(
-        req.body?.membership ||
-          ""
+        req.body?.membership || ""
       ).trim();
 
     const password =
       String(
-        req.body?.password ||
-          ""
+        req.body?.password || ""
       );
 
-    if (
-      !membership ||
-      !password
-    ) {
+    if (!membership || !password) {
       return res.status(400).json({
         ok: false,
+
+        authenticated: false,
 
         error:
           "Membership card number and password are required."
       });
     }
 
-    /*
-     * New login:
-     *
-     * Destroy any previous customer session first.
-     */
-    try {
-      if (req.session) {
-        await destroySession(req);
-      }
-    } catch (error) {
-      console.error(
-        "[CUSTOMER LOGIN] Unable to destroy old session:",
-        error
-      );
-    }
-
-    /*
-     * express-session creates a new session
-     * for this request after the old one is destroyed.
-     */
-
-    if (
-      password !==
-      CUSTOMER_PASSWORD
-    ) {
+    if (password !== CUSTOMER_PASSWORD) {
       return res.status(401).json({
         ok: false,
 
@@ -670,42 +581,90 @@ app.post(
       });
     }
 
+    /*
+     * Make absolutely sure Express session exists.
+     */
+
+    if (!req.session) {
+      console.error(
+        "[CUSTOMER LOGIN] req.session is undefined."
+      );
+
+      return res.status(500).json({
+        ok: false,
+
+        authenticated: false,
+
+        error:
+          "Customer session service is unavailable."
+      });
+    }
+
     try {
+      console.log(
+        `[CUSTOMER LOGIN] Verifying membership ${membership}`
+      );
+
+      /*
+       * Verify membership against ARMS.
+       */
+
       const live =
         await getCustomerProfileFromArms(
           membership
         );
+
+      console.log(
+        "[CUSTOMER LOGIN] ARMS profile received."
+      );
 
       const history =
         await getMembershipHistory(
           membership
         );
 
+      console.log(
+        "[CUSTOMER LOGIN] ARMS history received."
+      );
+
       const verifiedName =
         firstRealName(
           history?.name,
+
           history
             ?.personalInformation
             ?.fullName,
+
           history
             ?.personalInformation
             ?.name,
-          history?.member?.fullName,
-          history?.member?.full_name,
-          history?.member?.name,
+
+          history
+            ?.member
+            ?.fullName,
+
+          history
+            ?.member
+            ?.full_name,
+
+          history
+            ?.member
+            ?.name,
+
           live
             ?.personalInformation
             ?.fullName,
+
           live
             ?.personalInformation
             ?.name,
+
           live?.name
         );
 
       const liveExpiry =
         String(
-          live?.expiryDate ||
-            ""
+          live?.expiryDate || ""
         ).trim();
 
       const historyExpiry =
@@ -719,12 +678,20 @@ app.post(
       const verifiedExpiry =
         firstValue(
           historyExpiry,
+
           liveExpiry,
+
           history
             ?.personalInformation
             ?.expiryDate,
-          history?.member?.expiryDate,
-          history?.member?.expiry_date
+
+          history
+            ?.member
+            ?.expiryDate,
+
+          history
+            ?.member
+            ?.expiry_date
         );
 
       if (!verifiedName) {
@@ -755,9 +722,16 @@ app.post(
           history?.member
         );
 
+      /*
+       * IMPORTANT:
+       *
+       * Set the session only AFTER all ARMS
+       * verification has succeeded.
+       */
+
       req.session.customer = {
         membership:
-          live.membership ||
+          live?.membership ||
           history?.membership ||
           membership,
 
@@ -766,60 +740,65 @@ app.post(
 
         points:
           Number(
-            live.points || 0
+            live?.points || 0
           ),
 
         pointsBalance:
           Number(
-            live.pointsBalance ??
-              live.points ??
+            live?.pointsBalance ??
+              live?.points ??
               0
           ),
 
         pointsEarned:
           Number(
-            live.pointsEarned || 0
+            live?.pointsEarned || 0
           ),
 
         pointsUpdate:
-          live.pointsUpdate ||
+          live?.pointsUpdate ||
           null,
 
         issueBranch:
           firstValue(
             history?.issueBranch,
+
             history
               ?.personalInformation
               ?.issueBranch,
+
             history
               ?.personalInformation
               ?.applyBranch,
+
             live?.issueBranch,
+
             live
               ?.personalInformation
               ?.issueBranch,
+
             live
               ?.personalInformation
               ?.applyBranch
           ),
 
         issueDate:
-          live.issueDate ||
+          live?.issueDate ||
           null,
 
         expiryDate:
           verifiedExpiry,
 
         memberType:
-          live.memberType ||
+          live?.memberType ||
           null,
 
         gender:
-          live.gender ||
+          live?.gender ||
           null,
 
         birthday:
-          live.birthday ||
+          live?.birthday ||
           null,
 
         personalInformation:
@@ -830,28 +809,14 @@ app.post(
         Date.now();
 
       /*
-       * VERY IMPORTANT:
-       *
-       * Save the session before returning
-       * the login response.
-       *
-       * Express will then send Set-Cookie.
+       * Explicitly save session.
        */
 
       await saveSession(req);
 
       console.log(
-        "[CUSTOMER LOGIN] Session saved successfully."
-      );
-
-      console.log(
-        "[CUSTOMER LOGIN] Membership:",
-        req.session.customer.membership
-      );
-
-      console.log(
-        "[CUSTOMER LOGIN] Session ID exists:",
-        Boolean(req.sessionID)
+        "[CUSTOMER LOGIN] Session saved successfully:",
+        req.sessionID
       );
 
       return res.json({
@@ -862,12 +827,19 @@ app.post(
         customer:
           req.session.customer,
 
+        session: {
+          active: true,
+
+          sessionId:
+            req.sessionID
+        },
+
         arms: {
           authenticated: true,
 
           historyConfigured:
             Boolean(
-              live.historyConfigured ??
+              live?.historyConfigured ??
                 process.env
                   .ARMS_HISTORY_URL_TEMPLATE
             )
@@ -1132,8 +1104,7 @@ app.post(
 
       if (!transaction) {
         const membership =
-          req.session.customer
-            .membership;
+          req.session.customer.membership;
 
         const history =
           await getMembershipHistory(
@@ -1149,8 +1120,7 @@ app.post(
 
         const requestedReceipt =
           String(
-            requestedPurchase
-              ?.receiptNo ??
+            requestedPurchase?.receiptNo ??
               requestedPurchase
                 ?.receipt_no ??
               ""
@@ -1199,31 +1169,27 @@ app.post(
 
               if (
                 requestedReceipt &&
-                receipt ===
-                  requestedReceipt
+                receipt === requestedReceipt
               ) {
                 return true;
               }
 
               if (
                 requestedReference &&
-                reference ===
-                  requestedReference
+                reference === requestedReference
               ) {
                 return true;
               }
 
               return Boolean(
                 requestedDate &&
-                date ===
-                  requestedDate
+                  date === requestedDate
               );
             }
           );
 
         if (
-          exact?.detail?.items
-            ?.length
+          exact?.detail?.items?.length
         ) {
           return res.json({
             ok: true,
@@ -1236,10 +1202,8 @@ app.post(
         }
 
         transaction =
-          exact
-            ?.transaction_detail ||
-          exact
-            ?.transactionDetail ||
+          exact?.transaction_detail ||
+          exact?.transactionDetail ||
           null;
       }
 
@@ -1255,12 +1219,10 @@ app.post(
         required.filter(
           function (field) {
             return (
-              transaction?.[
-                field
-              ] === undefined ||
-              transaction?.[
-                field
-              ] === null ||
+              transaction?.[field] ===
+                undefined ||
+              transaction?.[field] ===
+                null ||
               String(
                 transaction[field]
               ).trim() === ""
@@ -1327,8 +1289,7 @@ app.get(
   async (req, res) => {
     try {
       const membership =
-        req.session.customer
-          .membership;
+        req.session.customer.membership;
 
       const qr =
         await QRCode.toDataURL(
@@ -1343,30 +1304,23 @@ app.get(
 
       const png =
         await bwipjs.toBuffer({
-          bcid:
-            "code128",
+          bcid: "code128",
 
-          text:
-            membership,
+          text: membership,
 
-          scale:
-            3,
+          scale: 3,
 
-          height:
-            12,
+          height: 12,
 
-          includetext:
-            true,
+          includetext: true,
 
-          textxalign:
-            "center"
+          textxalign: "center"
         });
 
       res.json({
         ok: true,
 
-        qrDataUrl:
-          qr,
+        qrDataUrl: qr,
 
         barcodeDataUrl:
           "data:image/png;base64," +
@@ -1398,7 +1352,7 @@ app.post(
       await destroySession(req);
     } catch (error) {
       console.error(
-        "[LOGOUT] Session destroy error:",
+        "[LOGOUT]",
         error
       );
     }
@@ -1441,7 +1395,7 @@ app.use(
 
 /*
 |--------------------------------------------------------------------------
-| ROOT FRONTEND
+| ROOT
 |--------------------------------------------------------------------------
 */
 
@@ -1482,7 +1436,30 @@ app.use(
 
 /*
 |--------------------------------------------------------------------------
-| START SERVER
+| ERROR HANDLER
+|--------------------------------------------------------------------------
+*/
+
+app.use(
+  (error, req, res, _next) => {
+    console.error(
+      "[EXPRESS ERROR]",
+      error
+    );
+
+    res.status(500).json({
+      ok: false,
+
+      error:
+        error?.message ||
+        "Internal server error."
+    });
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| START
 |--------------------------------------------------------------------------
 */
 
@@ -1491,12 +1468,13 @@ app.listen(
   "0.0.0.0",
   () => {
     console.log("");
+
     console.log(
       "=================================================="
     );
 
     console.log(
-      " Hasani ARMS Customer API 7.4.1"
+      " Hasani ARMS Customer API 7.5.0"
     );
 
     console.log(
@@ -1515,11 +1493,7 @@ app.listen(
     );
 
     console.log(
-      " Trust Proxy: ENABLED"
-    );
-
-    console.log(
-      ` Session Cookie: ${cookieName}`
+      ` Session cookie: ${cookieName}`
     );
 
     console.log(
@@ -1527,11 +1501,11 @@ app.listen(
     );
 
     console.log(
-      " Test: /api/test"
+      " API Test: /api/test"
     );
 
     console.log(
-      " Session: /api/customer/session-status"
+      " Session Test: /api/session-test"
     );
 
     console.log(
