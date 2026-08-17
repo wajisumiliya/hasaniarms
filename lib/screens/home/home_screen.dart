@@ -1194,7 +1194,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // REAL LOGO
                 // --------------------------------------------------
 
-                Positioned(
+                
                 Positioned(
   left: width * .05,
   top: height * .035,
@@ -1416,7 +1416,7 @@ class _HomeScreenState extends State<HomeScreen> {
 ),
                   ),
                 ),
-              ],
+              ),
             ),
           );
         },
