@@ -1421,18 +1421,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     child: BarcodeWidget(
-                      barcode:
-                          Barcode.code128(),
-                      data: membership,
-                      drawText: true,
-                      textStyle:
-                          TextStyle(
-                        fontSize:
-                            height * .035,
-                        fontWeight:
-                            FontWeight.w700,
-                      ),
-                    ),
+  barcode: Barcode.code128(),
+  data: membership,
+  drawText: true,
+  style: TextStyle(
+    fontSize: height * .035,
+    fontWeight: FontWeight.w700,
+  ),
+),
                   ),
                 ),
               ],
