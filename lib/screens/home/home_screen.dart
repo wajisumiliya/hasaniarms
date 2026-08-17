@@ -45,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // IMPORTANT:
   // This is the real local logo used by your web project.
   static const String logoAsset =
-      'assets/hasani-books-logo.jpg';
+    'web/assets/hasani-books-logo.jpg';
 
   @override
   void dispose() {
