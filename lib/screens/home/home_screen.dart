@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:barcode_widget/barcode_widget.dart';
 
 import '../../core/network/api_service.dart';
@@ -42,10 +41,8 @@ class _HomeScreenState extends State<HomeScreen> {
   static const Color mutedText = Color(0xff748096);
   static const Color pageBackground = Color(0xfff5f7fb);
 
-  // IMPORTANT:
-  // This is the real local logo used by your web project.
   static const String logoAsset =
-    'web/assets/hasani-books-logo.jpg';
+      'web/assets/hasani-books-logo.jpg';
 
   @override
   void dispose() {
@@ -91,14 +88,11 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
 
       setState(() {
-        customer = Map<String, dynamic>.from(
-          customerData,
-        );
+        customer =
+            Map<String, dynamic>.from(customerData);
 
         dashboard = dashboardData;
-
         currentView = 'dashboard';
-
         errorMessage = null;
       });
     } catch (e) {
@@ -541,27 +535,24 @@ class _HomeScreenState extends State<HomeScreen> {
       surfaceTintColor: Colors.white,
       elevation: 0,
       titleSpacing: 18,
-      title: Row(
-        children: [
-          SizedBox(
-            width: 110,
-            height: 42,
-            child: Image.asset(
-              logoAsset,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) {
-                return const Text(
-                  'HASANI BOOKS',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    color: blue,
-                    fontSize: 15,
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+      title: SizedBox(
+        width: 110,
+        height: 42,
+        child: Image.asset(
+          logoAsset,
+          fit: BoxFit.contain,
+          alignment: Alignment.centerLeft,
+          errorBuilder: (_, __, ___) {
+            return const Text(
+              'HASANI BOOKS',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                color: blue,
+                fontSize: 15,
+              ),
+            );
+          },
+        ),
       ),
       actions: [
         IconButton(
@@ -585,8 +576,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final name =
         customer?['name']?.toString() ?? 'Member';
 
-    final membership =
-        _membershipNumber();
+    final membership = _membershipNumber();
 
     return Drawer(
       backgroundColor: Colors.white,
@@ -598,6 +588,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
+                  // LOGO ONLY
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
                       24,
@@ -605,39 +596,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       20,
                       18,
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 70,
-                          height: 55,
-                          padding:
-                              const EdgeInsets.all(5),
-                          child: Image.asset(
-                            logoAsset,
-                            fit: BoxFit.contain,
-                            errorBuilder:
-                                (_, __, ___) {
-                              return const Icon(
-                                Icons.menu_book,
-                                color: blue,
-                                size: 35,
-                              );
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            'HASANI BOOKS',
-                            style: TextStyle(
-                              color: darkText,
-                              fontSize: 22,
-                              fontWeight:
-                                  FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: SizedBox(
+                      height: 60,
+                      width: double.infinity,
+                      child: Image.asset(
+                        logoAsset,
+                        fit: BoxFit.contain,
+                        alignment: Alignment.centerLeft,
+                        errorBuilder:
+                            (_, __, ___) {
+                          return const Icon(
+                            Icons.menu_book,
+                            color: blue,
+                            size: 35,
+                          );
+                        },
+                      ),
                     ),
                   ),
 
@@ -925,10 +899,6 @@ class _HomeScreenState extends State<HomeScreen> {
           40,
         ),
         children: [
-          // ------------------------------------------------------
-          // WELCOME
-          // ------------------------------------------------------
-
           const Text(
             'HASANI BOOKS MEMBER',
             style: TextStyle(
@@ -962,10 +932,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const SizedBox(height: 20),
 
-          // ------------------------------------------------------
-          // FRONT CARD
-          // ------------------------------------------------------
-
           _buildFrontMembershipCard(),
 
           const SizedBox(height: 8),
@@ -973,10 +939,6 @@ class _HomeScreenState extends State<HomeScreen> {
           _cardLabel('FRONT'),
 
           const SizedBox(height: 22),
-
-          // ------------------------------------------------------
-          // BACK CARD
-          // ------------------------------------------------------
 
           _buildBackMembershipCard(),
 
@@ -986,17 +948,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const SizedBox(height: 22),
 
-          // ------------------------------------------------------
-          // QR
-          // ------------------------------------------------------
-
-          _buildQrSection(),
+          _buildBarcodeSection(),
 
           const SizedBox(height: 22),
-
-          // ------------------------------------------------------
-          // STATISTICS
-          // ------------------------------------------------------
 
           _buildStatistics(
             points: points,
@@ -1112,18 +1066,11 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         dashboard = data;
       });
-    } catch (_) {
-      // Keep current dashboard data if refresh fails.
-    }
+    } catch (_) {}
   }
 
   // ============================================================
   // FRONT MEMBERSHIP CARD
-  // WEB CSS:
-  // aspect-ratio 85.60 / 53.98
-  // header 43%
-  // red divider
-  // white body
   // ============================================================
 
   Widget _buildFrontMembershipCard() {
@@ -1163,10 +1110,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Stack(
               clipBehavior: Clip.hardEdge,
               children: [
-                // --------------------------------------------------
                 // BLUE HEADER
-                // --------------------------------------------------
-
                 Positioned(
                   left: 0,
                   right: 0,
@@ -1190,81 +1134,70 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // --------------------------------------------------
-                // REAL LOGO
-                // --------------------------------------------------
-
-                
+                // LOGO
                 Positioned(
-  left: width * 0.05,
-  top: height * 0.035,
-  width: width * 0.67,
-  height: height * 0.237,
-  child: Image.asset(
-    logoAsset,
-    fit: BoxFit.contain,
-    alignment: Alignment.centerLeft,
-    errorBuilder: (context, error, stackTrace) {
-      return const Text(
-        'hasani BOOKS',
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w900,
-          fontSize: 18,
-        ),
-      );
-    },
-  ),
-),
-
-                // --------------------------------------------------
-                // % WATERMARK
-                // --------------------------------------------------
-
-                Positioned(
-                  right: width * .05,
-                  top: height * .018,
-                  child: Text(
-                    '%',
-                    style: TextStyle(
-                      color:
-                          Colors.white.withValues(
-                        alpha: .13,
-                      ),
-                      fontSize:
-                          height * .30,
-                      height: .8,
-                      fontWeight:
-                          FontWeight.w900,
-                    ),
+                  left: width * .05,
+                  top: height * .035,
+                  width: width * .67,
+                  height: height * .23,
+                  child: Image.asset(
+                    logoAsset,
+                    fit: BoxFit.contain,
+                    alignment: Alignment.centerLeft,
+                    errorBuilder:
+                        (_, __, ___) {
+                      return const Text(
+                        'hasani BOOKS',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight:
+                              FontWeight.w900,
+                          fontSize: 18,
+                        ),
+                      );
+                    },
                   ),
                 ),
 
-                // --------------------------------------------------
-                // CARD TITLE
-                // --------------------------------------------------
-
+                // DISCOUNT CARD
                 Positioned(
-                  left: width * .05,
+                  left: width * .055,
                   bottom: height * .045,
                   child: Text(
                     'DISCOUNT CARD',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize:
-                          height * .105,
+                          (height * .105)
+                              .clamp(8.0, 20.0),
                       height: 1,
                       fontWeight:
                           FontWeight.w900,
-                      letterSpacing: .3,
+                      letterSpacing: .25,
                     ),
                   ),
                 ),
 
-                // --------------------------------------------------
-                // RED DIVIDER
-                // --------------------------------------------------
+                // SMALL % DECORATION
+                Positioned(
+                  right: width * .055,
+                  top: height * .035,
+                  child: Text(
+                    '%',
+                    style: TextStyle(
+                      color:
+                          Colors.white.withValues(
+                        alpha: .10,
+                      ),
+                      fontSize:
+                          height * .22,
+                      fontWeight:
+                          FontWeight.w900,
+                    ),
+                  ),
+                ),
 
+                // RED DIVIDER
                 Positioned(
                   left: 0,
                   right: 0,
@@ -1275,10 +1208,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // --------------------------------------------------
                 // WHITE BODY
-                // --------------------------------------------------
-
                 Positioned(
                   left: 0,
                   right: 0,
@@ -1289,56 +1219,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // --------------------------------------------------
-                // WATERMARK
-                // --------------------------------------------------
-
-                Positioned.fill(
-                  top: height * .43 + 10,
-                  child: IgnorePointer(
-                    child: Opacity(
-                      opacity: .055,
-                      child: Padding(
-                        padding:
-                            const EdgeInsets.symmetric(
-                          horizontal: 8,
-                        ),
-                        child: GridView.count(
-                          physics:
-                              const NeverScrollableScrollPhysics(),
-                          crossAxisCount: 2,
-                          childAspectRatio: 4,
-                          mainAxisSpacing: 5,
-                          crossAxisSpacing: 12,
-                          children:
-                              List.generate(
-                            10,
-                            (_) => Text(
-                              'hasani BOOKS',
-                              style: TextStyle(
-                                color: blue,
-                                fontSize:
-                                    height * .042,
-                                fontWeight:
-                                    FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // --------------------------------------------------
                 // MEMBER INFORMATION
-                // --------------------------------------------------
-
                 Positioned(
                   left: width * .055,
                   top: height * .485,
-                  width: width * .55,
-                  bottom: height * .05,
+                  width: width * .56,
+                  bottom: height * .045,
                   child: Column(
                     crossAxisAlignment:
                         CrossAxisAlignment.start,
@@ -1347,6 +1233,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         'MEMBER NAME',
                         name,
                         height,
+                        allowFullName: true,
                       ),
                       _cardField(
                         'MEMBER ID',
@@ -1367,53 +1254,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // --------------------------------------------------
-                // BARCODE
-                // --------------------------------------------------
-
+                // BARCODE ON CARD
                 Positioned(
-                  right: width * .04,
-                  bottom: height * .08,
-                  width: width * .37,
-                  height: height * .26,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.fromLTRB(
-                      5,
-                      5,
-                      5,
-                      3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(
-                        color:
-                            const Color(0xff8994a8),
-                        width: 1.5,
-                      ),
-                      borderRadius:
-                          BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black
-                              .withValues(
-                            alpha: .18,
-                          ),
-                          blurRadius: 8,
-                          offset:
-                              const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                                        child: BarcodeWidget(
-                      barcode: Barcode.code128(),
-                      data: membership,
-                      drawText: true,
-                      style: TextStyle(
-                        fontSize: height * .035,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                  right: width * .035,
+                  bottom: height * .065,
+                  width: width * .36,
+                  height: height * .27,
+                  child: _membershipBarcode(
+                    membership,
+                    showText: true,
+                    border: true,
                   ),
                 ),
               ],
@@ -1423,10 +1273,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  // ============================================================
-  // BACK MEMBERSHIP CARD
-  // ============================================================
 
   // ============================================================
   // BACK MEMBERSHIP CARD
@@ -1444,25 +1290,19 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Stack(
               clipBehavior: Clip.hardEdge,
               children: [
-                // --------------------------------------------------
                 // WHITE BASE
-                // --------------------------------------------------
-
                 Positioned.fill(
                   child: Container(
                     color: Colors.white,
                   ),
                 ),
 
-                // --------------------------------------------------
                 // BLUE HEADER
-                // --------------------------------------------------
-
                 Positioned(
                   left: 0,
                   right: 0,
                   top: 0,
-                  height: height * .19,
+                  height: height * .21,
                   child: Container(
                     decoration:
                         const BoxDecoration(
@@ -1472,126 +1312,120 @@ class _HomeScreenState extends State<HomeScreen> {
                         end:
                             Alignment.centerRight,
                         colors: [
-                          Color(0xff263b91),
-                          Color(0xff30479e),
-                          Color(0xff263a8d),
+                          blue,
+                          blue2,
+                          blue3,
                         ],
                       ),
                     ),
                   ),
                 ),
 
-                // --------------------------------------------------
-                // SOCIAL INFORMATION
-                // --------------------------------------------------
-
+                // SOCIAL ICONS
                 Positioned(
-                  left: width * .04,
-                  top: height * .035,
-                  width: width * .65,
-                  height: height * .12,
+                  left: width * .035,
+                  top: height * .045,
                   child: Row(
                     children: [
-                      _socialCircle(
-                        Icons.facebook,
-                      ),
+                      _socialCircle(Icons.facebook),
                       const SizedBox(width: 4),
                       _socialCircle(
                         Icons.camera_alt_outlined,
                       ),
                       const SizedBox(width: 4),
-                      _socialCircle(
-                        Icons.music_note,
-                      ),
+                      _socialCircle(Icons.music_note),
                       const SizedBox(width: 4),
-                      _socialCircle(
-                        Icons.chat,
-                      ),
-                      const SizedBox(width: 5),
-                      Flexible(
-                        child: Text(
-                          'hasaniBOOKS  |  +60 19-475 7733',
-                          maxLines: 1,
-                          overflow:
-                              TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize:
-                                height * .055,
-                            fontWeight:
-                                FontWeight.w900,
-                          ),
-                        ),
-                      ),
+                      _socialCircle(Icons.chat),
                     ],
                   ),
                 ),
 
-                // --------------------------------------------------
-                // BACK LOGO - RIGHT 25%
-                // --------------------------------------------------
-
+                // HASANI BOOKS + PHONE
                 Positioned(
-                  right: width * .04,
-                  top: height * .028,
-                  width: width * .25,
-                  height: height * .133,
-                  child: Container(
-                    clipBehavior:
-                        Clip.hardEdge,
-                    decoration:
-                        BoxDecoration(
-                      color:
-                          const Color(0xffc00202),
-                      borderRadius:
-                          BorderRadius.circular(3),
-                    ),
-                    child: Image.asset(
-                      logoAsset,
-                      fit: BoxFit.contain,
-                      errorBuilder:
-                          (_, __, ___) {
-                        return const Center(
-                          child: Text(
-                            'hasani BOOKS',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight:
-                                  FontWeight.w900,
-                            ),
-                          ),
-                        );
-                      },
+                  left: width * .205,
+                  right: width * .035,
+                  top: height * .038,
+                  height: height * .10,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'hasaniBOOKS  |  +60 19-475 7733',
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize:
+                            height * .058,
+                        fontWeight:
+                            FontWeight.w900,
+                      ),
                     ),
                   ),
                 ),
 
-                // --------------------------------------------------
-                // RED LINE
-                // --------------------------------------------------
+                // SMALL LOGO ON RIGHT
+                Positioned(
+                  right: width * .035,
+                  top: height * .025,
+                  width: width * .20,
+                  height: height * .14,
+                  child: Image.asset(
+                    logoAsset,
+                    fit: BoxFit.contain,
+                    alignment: Alignment.centerRight,
+                    errorBuilder:
+                        (_, __, ___) {
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ),
 
+                // RED LINE
                 Positioned(
                   left: 0,
                   right: 0,
-                  top: height * .19,
-                  height: 4,
+                  top: height * .21,
+                  height: 3,
                   child: Container(
                     color: red,
                   ),
                 ),
 
-                // --------------------------------------------------
-                // TERMS
-                // --------------------------------------------------
-
+                // HORIZONTAL MEMBER DISCOUNT CARD
                 Positioned(
-                  left: width * .07,
-                  right: width * .08,
-                  top: height * .24,
-                  bottom: height * .16,
+                  left: width * .055,
+                  right: width * .055,
+                  top: height * .235,
+                  height: height * .08,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'MEMBER DISCOUNT CARD',
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: blue,
+                        fontSize:
+                            height * .060,
+                        fontWeight:
+                            FontWeight.w900,
+                        letterSpacing: .2,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // TERMS
+                Positioned(
+                  left: width * .055,
+                  right: width * .055,
+                  top: height * .315,
+                  bottom: height * .155,
                   child: Column(
                     mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+                        MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
                       _backRule(
                         'Kad ini bukan kad kredit.',
@@ -1602,8 +1436,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         height,
                       ),
                       _backRule(
-                        'Pemilik kad ini boleh mendapat diskaun '
-                        'bagi buku dan alat tulis yang terpilih sahaja.',
+                        'Pemilik kad ini boleh mendapat diskaun bagi '
+                        'buku dan alat tulis yang terpilih sahaja.',
                         height,
                       ),
                       _backRule(
@@ -1625,52 +1459,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // --------------------------------------------------
-                // VERTICAL LABEL
-                // --------------------------------------------------
-
-                Positioned(
-                  right: 0,
-                  top: height * .25,
-                  bottom: height * .19,
-                  width: width * .042,
-                  child: Container(
-                    color: const Color(0xff353d99),
-                    alignment: Alignment.center,
-                    child: RotatedBox(
-                      quarterTurns: 2,
-                      child: Text(
-                        'MEMBER DISCOUNT CARD',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize:
-                              height * .043,
-                          fontWeight:
-                              FontWeight.w200,
-                          letterSpacing: .3,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // --------------------------------------------------
                 // FOOTER
-                // --------------------------------------------------
-
                 Positioned(
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  height: height * .15,
+                  height: height * .145,
                   child: Container(
                     padding:
-                        EdgeInsets.fromLTRB(
-                      width * .05,
-                      4,
-                      width * .08,
-                      4,
+                        EdgeInsets.symmetric(
+                      horizontal: width * .045,
+                      vertical: 3,
                     ),
                     decoration:
                         const BoxDecoration(
@@ -1693,37 +1492,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment:
                           CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        _fitFooterText(
                           'Hasani Edar Sdn. Bhd.',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize:
-                                height * .050,
-                            fontWeight:
-                                FontWeight.w800,
-                          ),
+                          height * .045,
                         ),
-                        Text(
-                          '41A–47A, Jalan Pengkalan, '
-                          'Taman Pekan Baru,',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize:
-                                height * .040,
-                            fontWeight:
-                                FontWeight.w800,
-                          ),
+                        _fitFooterText(
+                          '41A–47A, Jalan Pengkalan, Taman Pekan Baru,',
+                          height * .034,
                         ),
-                        Text(
-                          '08000 Sungai Petani, '
-                          'Kedah Darul Aman.',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize:
-                                height * .045,
-                            fontWeight:
-                                FontWeight.w800,
-                          ),
+                        _fitFooterText(
+                          '08000 Sungai Petani, Kedah Darul Aman.',
+                          height * .034,
                         ),
                       ],
                     ),
@@ -1733,6 +1512,28 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _fitFooterText(
+    String text,
+    double fontSize,
+  ) {
+    return SizedBox(
+      width: double.infinity,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          text,
+          maxLines: 1,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: fontSize.clamp(6.0, 14.0),
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
     );
   }
@@ -1797,12 +1598,18 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _cardField(
     String label,
     String value,
-    double cardHeight,
-  ) {
+    double cardHeight, {
+    bool allowFullName = false,
+  }) {
+    final valueSize =
+        allowFullName
+            ? (cardHeight * .052).clamp(7.0, 16.0)
+            : (cardHeight * .052).clamp(7.0, 16.0);
+
     return Padding(
       padding:
           EdgeInsets.only(
-        bottom: cardHeight * .025,
+        bottom: cardHeight * .018,
       ),
       child: Column(
         crossAxisAlignment:
@@ -1814,25 +1621,32 @@ class _HomeScreenState extends State<HomeScreen> {
             style: TextStyle(
               color: blue,
               fontSize:
-                  cardHeight * .035,
+                  (cardHeight * .032)
+                      .clamp(6.0, 11.0),
               height: 1,
               fontWeight:
                   FontWeight.w900,
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            value,
-            maxLines: 1,
-            overflow:
-                TextOverflow.ellipsis,
-            style: TextStyle(
-              color: const Color(0xff111111),
-              fontSize:
-                  cardHeight * .052,
-              height: 1.15,
-              fontWeight:
-                  FontWeight.w900,
+          SizedBox(
+            width: double.infinity,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  color:
+                      const Color(0xff111111),
+                  fontSize: valueSize,
+                  height: 1.1,
+                  fontWeight:
+                      FontWeight.w900,
+                ),
+              ),
             ),
           ),
         ],
@@ -1844,30 +1658,20 @@ class _HomeScreenState extends State<HomeScreen> {
     String text,
     double cardHeight,
   ) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding:
-          const EdgeInsets.only(
-        bottom: 3,
-      ),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Color(0xff777777),
-            width: 1,
-            style: BorderStyle.solid,
-          ),
-        ),
-      ),
       child: Text(
         text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: const Color(0xff101010),
           fontSize:
-              cardHeight * .032,
-          height: 1.25,
+              (cardHeight * .030)
+                  .clamp(5.5, 9.5),
+          height: 1.05,
           fontWeight:
-              FontWeight.w900,
+              FontWeight.w800,
         ),
       ),
     );
@@ -1893,10 +1697,81 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ============================================================
-  // QR SECTION
+  // MEMBERSHIP BARCODE
   // ============================================================
 
-  Widget _buildQrSection() {
+  Widget _membershipBarcode(
+    String membership, {
+    bool showText = true,
+    bool border = false,
+  }) {
+    final barcode = BarcodeWidget(
+      barcode: Barcode.code128(),
+      data: membership.isEmpty
+          ? '000000000000'
+          : membership,
+      drawText: showText,
+      style: const TextStyle(
+        fontSize: 8,
+        fontWeight: FontWeight.w700,
+        color: Colors.black,
+      ),
+      errorBuilder:
+          (context, error) {
+        return Center(
+          child: Text(
+            membership,
+            style: const TextStyle(
+              fontSize: 9,
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!border) {
+      return barcode;
+    }
+
+    return Container(
+      padding:
+          const EdgeInsets.fromLTRB(
+        5,
+        5,
+        5,
+        3,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(
+          color: const Color(0xff8994a8),
+          width: 1.2,
+        ),
+        borderRadius:
+            BorderRadius.circular(7),
+        boxShadow: [
+          BoxShadow(
+            color:
+                Colors.black.withValues(
+              alpha: .14,
+            ),
+            blurRadius: 7,
+            offset:
+                const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: barcode,
+    );
+  }
+
+  // ============================================================
+  // BARCODE SECTION
+  // ============================================================
+
+  Widget _buildBarcodeSection() {
     final membership =
         _membershipNumber();
 
@@ -1911,44 +1786,67 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Padding(
         padding: const EdgeInsets.all(18),
-        child: Row(
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
-            Container(
-              color: Colors.white,
-              padding:
-                  const EdgeInsets.all(5),
-              child: QrImageView(
-                data:
-                    'HASANI-MEMBER:$membership',
-                size: 88,
+            const Text(
+              'Membership Barcode',
+              style: TextStyle(
+                color: darkText,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
               ),
             ),
-            const SizedBox(width: 18),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Membership QR',
-                    style: TextStyle(
-                      color: darkText,
-                      fontSize: 17,
-                      fontWeight:
-                          FontWeight.w800,
-                    ),
-                  ),
-                  SizedBox(height: 5),
-                  Text(
-                    'Show this QR code when your membership '
-                    'needs to be verified.',
-                    style: TextStyle(
-                      color: mutedText,
-                      fontSize: 12,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
+
+            const SizedBox(height: 5),
+
+            const Text(
+              'Show this barcode when your membership '
+              'needs to be verified.',
+              style: TextStyle(
+                color: mutedText,
+                fontSize: 12,
+                height: 1.4,
+              ),
+            ),
+
+            const SizedBox(height: 15),
+
+            Container(
+              width: double.infinity,
+              height: 105,
+              padding:
+                  const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 10,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius:
+                    BorderRadius.circular(10),
+                border: Border.all(
+                  color:
+                      const Color(0xffdfe4ee),
+                ),
+              ),
+              child: _membershipBarcode(
+                membership,
+                showText: true,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Center(
+              child: Text(
+                membership,
+                style: const TextStyle(
+                  color: darkText,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1,
+                ),
               ),
             ),
           ],
@@ -2711,12 +2609,15 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(width: 10),
-          Text(
-            value,
-            style: const TextStyle(
-              color: blue,
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: blue,
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
         ],
@@ -2741,8 +2642,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _initial(String name) {
-    final clean =
-        name.trim();
+    final clean = name.trim();
 
     if (clean.isEmpty) {
       return 'M';
