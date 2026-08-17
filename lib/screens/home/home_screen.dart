@@ -20,11 +20,12 @@ class _HomeScreenState extends State<HomeScreen> {
       TextEditingController();
 
   Map<String, dynamic>? customer;
-Map<String, dynamic>? dashboard;
+  Map<String, dynamic>? dashboard;
 
-List<dynamic> purchaseHistory = [];
-bool purchasesLoading = false;
-String? purchasesError;
+  List<dynamic> purchaseHistory = [];
+
+  bool purchasesLoading = false;
+  String? purchasesError;
 
   String? errorMessage;
 
@@ -32,10 +33,6 @@ String? purchasesError;
   bool obscurePassword = true;
 
   String currentView = 'dashboard';
-
-  // ============================================================
-  // HASANI BOOKS COLORS
-  // ============================================================
 
   static const Color blue = Color(0xff263d92);
   static const Color blue2 = Color(0xff30479e);
@@ -92,9 +89,7 @@ String? purchasesError;
       if (!mounted) return;
 
       setState(() {
-        customer =
-            Map<String, dynamic>.from(customerData);
-
+        customer = Map<String, dynamic>.from(customerData);
         dashboard = dashboardData;
         currentView = 'dashboard';
         errorMessage = null;
@@ -103,9 +98,8 @@ String? purchasesError;
       if (!mounted) return;
 
       setState(() {
-        errorMessage = e
-            .toString()
-            .replaceFirst('Exception: ', '');
+        errorMessage =
+            e.toString().replaceFirst('Exception: ', '');
       });
     } finally {
       if (!mounted) return;
@@ -135,6 +129,8 @@ String? purchasesError;
     setState(() {
       customer = null;
       dashboard = null;
+      purchaseHistory = [];
+      purchasesError = null;
       errorMessage = null;
       currentView = 'dashboard';
       passwordController.clear();
@@ -187,7 +183,6 @@ String? purchasesError;
                           MainAxisAlignment.center,
                       children: [
                         _buildLoginLogo(),
-
                         const SizedBox(height: 24),
 
                         const Align(
@@ -408,7 +403,7 @@ String? purchasesError;
                               const SizedBox(width: 9),
                               Expanded(
                                 child: Text(
-                                  'use your existing '
+                                  'Use your existing '
                                   'membership/IC No and password.',
                                   style: TextStyle(
                                     color: theme
@@ -592,7 +587,6 @@ String? purchasesError;
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  // LOGO ONLY
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
                       24,
@@ -770,6 +764,10 @@ String? purchasesError;
     );
   }
 
+  // ============================================================
+  // DRAWER ITEM
+  // ============================================================
+
   Widget _drawerItem({
     required IconData icon,
     required String title,
@@ -797,6 +795,13 @@ String? purchasesError;
             setState(() {
               currentView = view;
             });
+
+            // IMPORTANT:
+            // Load purchase history immediately
+            // when the Purchase History page opens.
+            if (view == 'purchases') {
+              _loadPurchaseHistory();
+            }
           },
           child: Padding(
             padding:
@@ -885,7 +890,11 @@ String? purchasesError;
     for (final item in purchases) {
       if (item is Map) {
         totalSpend +=
-            _doubleValue(item['total']);
+            _doubleValue(
+          item['total'] ??
+              item['amount'] ??
+              item['grandTotal'],
+        );
       }
     }
 
@@ -983,6 +992,8 @@ String? purchasesError;
               setState(() {
                 currentView = 'purchases';
               });
+
+              _loadPurchaseHistory();
             },
           ),
 
@@ -1060,6 +1071,10 @@ String? purchasesError;
     );
   }
 
+  // ============================================================
+  // REFRESH DASHBOARD
+  // ============================================================
+
   Future<void> _refreshDashboard() async {
     try {
       final data =
@@ -1072,53 +1087,617 @@ String? purchasesError;
       });
     } catch (_) {}
   }
-Future<void> _loadPurchaseHistory() async {
-  if (purchasesLoading) return;
 
-  setState(() {
-    purchasesLoading = true;
-    purchasesError = null;
-  });
+  // ============================================================
+  // LOAD PURCHASE HISTORY
+  // ============================================================
 
-  try {
-    final response = await api.get(
-      '/api/customer/purchases',
+  Future<void> _loadPurchaseHistory() async {
+    if (purchasesLoading) return;
+
+    if (!mounted) return;
+
+    setState(() {
+      purchasesLoading = true;
+      purchasesError = null;
+    });
+
+    try {
+      final response = await api.get(
+        '/api/customer/purchases',
+      );
+
+      if (!mounted) return;
+
+      List<dynamic> purchases = [];
+
+      // --------------------------------------------------------
+      // API RETURNS DIRECT LIST
+      // --------------------------------------------------------
+
+      if (response is List) {
+        purchases = List<dynamic>.from(response);
+      }
+
+      // --------------------------------------------------------
+      // API RETURNS MAP
+      // --------------------------------------------------------
+
+      else if (response is Map) {
+        final data = response['purchases'];
+
+        if (data is List) {
+          purchases = List<dynamic>.from(data);
+        } else if (response['data'] is List) {
+          purchases =
+              List<dynamic>.from(response['data']);
+        } else if (response['transactions'] is List) {
+          purchases =
+              List<dynamic>.from(
+            response['transactions'],
+          );
+        } else if (response['history'] is List) {
+          purchases =
+              List<dynamic>.from(
+            response['history'],
+          );
+        } else if (response['purchaseHistory'] is List) {
+          purchases =
+              List<dynamic>.from(
+            response['purchaseHistory'],
+          );
+        }
+      }
+
+      setState(() {
+        purchaseHistory = purchases;
+        purchasesLoading = false;
+        purchasesError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        purchasesLoading = false;
+        purchasesError =
+            e.toString().replaceFirst(
+                  'Exception: ',
+                );
+      });
+    }
+  }
+
+  // ============================================================
+  // PURCHASE HISTORY PAGE
+  // ============================================================
+
+  Widget _buildPurchasesPage() {
+    return RefreshIndicator(
+      onRefresh: _loadPurchaseHistory,
+      child: ListView(
+        physics:
+            const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          22,
+          16,
+          40,
+        ),
+        children: [
+          _pageHeading(
+            eyebrow: 'MEMBER ACTIVITY',
+            title: 'Purchase History',
+            description:
+                'Your Hasani Books purchase records.',
+          ),
+
+          // ----------------------------------------------------
+          // LOADING
+          // ----------------------------------------------------
+
+          if (purchasesLoading)
+            Container(
+              width: double.infinity,
+              padding:
+                  const EdgeInsets.symmetric(
+                vertical: 45,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius:
+                    BorderRadius.circular(18),
+                border: Border.all(
+                  color:
+                      const Color(0xffe8ebf2),
+                ),
+              ),
+              child: const Column(
+                children: [
+                  SizedBox(
+                    width: 34,
+                    height: 34,
+                    child:
+                        CircularProgressIndicator(
+                      strokeWidth: 3,
+                      color: blue,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading purchase history...',
+                    style: TextStyle(
+                      color: mutedText,
+                      fontSize: 14,
+                      fontWeight:
+                          FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            )
+
+          // ----------------------------------------------------
+          // ERROR
+          // ----------------------------------------------------
+
+          else if (purchasesError != null)
+            _buildPurchaseError()
+
+          // ----------------------------------------------------
+          // EMPTY
+          // ----------------------------------------------------
+
+          else if (purchaseHistory.isEmpty)
+            _buildPurchaseEmpty()
+
+          // ----------------------------------------------------
+          // PURCHASE LIST
+          // ----------------------------------------------------
+
+          else
+            ...purchaseHistory.map(
+              (purchase) {
+                if (purchase is! Map) {
+                  return const SizedBox.shrink();
+                }
+
+                return _buildPurchaseCard(
+                  Map<String, dynamic>.from(
+                    purchase,
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // PURCHASE CARD
+  // ============================================================
+
+  Widget _buildPurchaseCard(
+    Map<String, dynamic> purchase,
+  ) {
+    final receipt = _firstValue([
+          purchase['receiptNo'],
+          purchase['receiptNumber'],
+          purchase['receipt'],
+          purchase['invoiceNo'],
+          purchase['invoiceNumber'],
+          purchase['transactionNo'],
+          purchase['transactionNumber'],
+          purchase['id'],
+        ]) ??
+        '-';
+
+    final date = _firstValue([
+          purchase['date'],
+          purchase['purchaseDate'],
+          purchase['transactionDate'],
+          purchase['createdAt'],
+          purchase['datetime'],
+          purchase['timestamp'],
+        ]) ??
+        '-';
+
+    final branch = _firstValue([
+          purchase['branch'],
+          purchase['branchName'],
+          purchase['store'],
+          purchase['storeName'],
+          purchase['location'],
+        ]) ??
+        '';
+
+    final points = _numberValue(
+      purchase['points'] ??
+          purchase['pointsEarned'] ??
+          purchase['earnedPoints'] ??
+          purchase['memberPoints'],
     );
 
-    if (!mounted) return;
+    final total = _doubleValue(
+      purchase['total'] ??
+          purchase['amount'] ??
+          purchase['grandTotal'] ??
+          purchase['totalAmount'] ??
+          purchase['netTotal'] ??
+          purchase['price'],
+    );
 
-    List<dynamic> purchases = [];
+    return Card(
+      elevation: 0,
+      margin:
+          const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.circular(18),
+        side: const BorderSide(
+          color: Color(0xffe8ebf2),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(17),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color:
+                        blue.withValues(
+                      alpha: .08,
+                    ),
+                    borderRadius:
+                        BorderRadius.circular(
+                      14,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.receipt_long,
+                    color: blue,
+                    size: 25,
+                  ),
+                ),
 
-    if (response is List) {
-      purchases = response;
-    } else if (response is Map) {
-      final data = response['purchases'];
+                const SizedBox(width: 13),
 
-      if (data is List) {
-        purchases = data;
-      } else if (response['data'] is List) {
-        purchases = response['data'];
-      } else if (response['transactions'] is List) {
-        purchases = response['transactions'];
-      } else if (response['history'] is List) {
-        purchases = response['history'];
-      }
-    }
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'RECEIPT',
+                        style: TextStyle(
+                          color: mutedText,
+                          fontSize: 10,
+                          fontWeight:
+                              FontWeight.w800,
+                          letterSpacing: 1,
+                        ),
+                      ),
 
-    setState(() {
-      purchaseHistory = purchases;
-      purchasesLoading = false;
-    });
-  } catch (e) {
-    if (!mounted) return;
+                      const SizedBox(height: 3),
 
-    setState(() {
-      purchasesLoading = false;
-      purchasesError =
-          e.toString().replaceFirst('Exception: ', '');
-    });
+                      Text(
+                        receipt,
+                        maxLines: 1,
+                        overflow:
+                            TextOverflow.ellipsis,
+                        style:
+                            const TextStyle(
+                          color: darkText,
+                          fontSize: 16,
+                          fontWeight:
+                              FontWeight.w900,
+                        ),
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      Text(
+                        date,
+                        maxLines: 2,
+                        overflow:
+                            TextOverflow.ellipsis,
+                        style:
+                            const TextStyle(
+                          color: mutedText,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+
+                Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.end,
+                  children: [
+                    const Text(
+                      'TOTAL',
+                      style: TextStyle(
+                        color: mutedText,
+                        fontSize: 9,
+                        fontWeight:
+                            FontWeight.w800,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'RM ${total.toStringAsFixed(2)}',
+                      style:
+                          const TextStyle(
+                        color: darkText,
+                        fontSize: 16,
+                        fontWeight:
+                            FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+
+            const Divider(
+              height: 1,
+              color: Color(0xffedf0f5),
+            ),
+
+            const SizedBox(height: 12),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _purchaseInfo(
+                    Icons.stars_outlined,
+                    'Points',
+                    '+$points',
+                  ),
+                ),
+
+                if (branch.isNotEmpty)
+                  Expanded(
+                    child: _purchaseInfo(
+                      Icons.store_outlined,
+                      'Branch',
+                      branch,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
-}
+
+  Widget _purchaseInfo(
+    IconData icon,
+    String label,
+    String value,
+  ) {
+    return Row(
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: blue,
+        ),
+        const SizedBox(width: 7),
+        Expanded(
+          child: Column(
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: mutedText,
+                  fontSize: 10,
+                  fontWeight:
+                      FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                maxLines: 2,
+                overflow:
+                    TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: darkText,
+                  fontSize: 12,
+                  fontWeight:
+                      FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // PURCHASE ERROR
+  // ============================================================
+
+  Widget _buildPurchaseError() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius:
+            BorderRadius.circular(18),
+        border: Border.all(
+          color:
+              Colors.red.withValues(
+            alpha: .18,
+          ),
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 65,
+            height: 65,
+            decoration: BoxDecoration(
+              color:
+                  Colors.red.withValues(
+                alpha: .07,
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.error_outline,
+              color: Colors.red,
+              size: 34,
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          const Text(
+            'Unable to load purchases',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: darkText,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+
+          const SizedBox(height: 7),
+
+          Text(
+            purchasesError ??
+                'An unknown error occurred.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: mutedText,
+              fontSize: 13,
+              height: 1.45,
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          SizedBox(
+            height: 46,
+            child: FilledButton.icon(
+              onPressed:
+                  _loadPurchaseHistory,
+              icon: const Icon(
+                Icons.refresh,
+              ),
+              label: const Text(
+                'Try Again',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // PURCHASE EMPTY
+  // ============================================================
+
+  Widget _buildPurchaseEmpty() {
+    return Container(
+      width: double.infinity,
+      padding:
+          const EdgeInsets.symmetric(
+        horizontal: 24,
+        vertical: 45,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius:
+            BorderRadius.circular(18),
+        border: Border.all(
+          color:
+              const Color(0xffe8ebf2),
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color:
+                  blue.withValues(
+                alpha: .08,
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.receipt_long_outlined,
+              color: blue,
+              size: 36,
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          const Text(
+            'No purchases found',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: darkText,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          const Text(
+            'There are no purchase records available '
+            'for this membership yet.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: mutedText,
+              fontSize: 13,
+              height: 1.5,
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          OutlinedButton.icon(
+            onPressed:
+                _loadPurchaseHistory,
+            icon: const Icon(
+              Icons.refresh,
+            ),
+            label: const Text(
+              'Refresh',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ============================================================
   // FRONT MEMBERSHIP CARD
   // ============================================================
@@ -1153,14 +1732,15 @@ Future<void> _loadPurchaseHistory() async {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
-          final height = width * 53.98 / 85.60;
+          final height =
+              width * 53.98 / 85.60;
 
           return SizedBox(
             height: height,
             child: Stack(
-              clipBehavior: Clip.hardEdge,
+              clipBehavior:
+                  Clip.hardEdge,
               children: [
-                // BLUE HEADER
                 Positioned(
                   left: 0,
                   right: 0,
@@ -1169,7 +1749,8 @@ Future<void> _loadPurchaseHistory() async {
                   child: Container(
                     decoration:
                         const BoxDecoration(
-                      gradient: LinearGradient(
+                      gradient:
+                          LinearGradient(
                         begin:
                             Alignment.centerLeft,
                         end:
@@ -1184,7 +1765,6 @@ Future<void> _loadPurchaseHistory() async {
                   ),
                 ),
 
-                // LOGO
                 Positioned(
                   left: width * .05,
                   top: height * .035,
@@ -1193,7 +1773,8 @@ Future<void> _loadPurchaseHistory() async {
                   child: Image.asset(
                     logoAsset,
                     fit: BoxFit.contain,
-                    alignment: Alignment.centerLeft,
+                    alignment:
+                        Alignment.centerLeft,
                     errorBuilder:
                         (_, __, ___) {
                       return const Text(
@@ -1209,7 +1790,6 @@ Future<void> _loadPurchaseHistory() async {
                   ),
                 ),
 
-                // DISCOUNT CARD
                 Positioned(
                   left: width * .055,
                   bottom: height * .045,
@@ -1219,7 +1799,10 @@ Future<void> _loadPurchaseHistory() async {
                       color: Colors.white,
                       fontSize:
                           (height * .105)
-                              .clamp(8.0, 20.0),
+                              .clamp(
+                        8.0,
+                        20.0,
+                      ),
                       height: 1,
                       fontWeight:
                           FontWeight.w900,
@@ -1228,7 +1811,6 @@ Future<void> _loadPurchaseHistory() async {
                   ),
                 ),
 
-                // SMALL % DECORATION
                 Positioned(
                   right: width * .055,
                   top: height * .035,
@@ -1236,7 +1818,8 @@ Future<void> _loadPurchaseHistory() async {
                     '%',
                     style: TextStyle(
                       color:
-                          Colors.white.withValues(
+                          Colors.white
+                              .withValues(
                         alpha: .10,
                       ),
                       fontSize:
@@ -1247,7 +1830,6 @@ Future<void> _loadPurchaseHistory() async {
                   ),
                 ),
 
-                // RED DIVIDER
                 Positioned(
                   left: 0,
                   right: 0,
@@ -1258,18 +1840,17 @@ Future<void> _loadPurchaseHistory() async {
                   ),
                 ),
 
-                // WHITE BODY
                 Positioned(
                   left: 0,
                   right: 0,
-                  top: height * .43 + 4,
+                  top:
+                      height * .43 + 4,
                   bottom: 0,
                   child: Container(
                     color: Colors.white,
                   ),
                 ),
 
-                // MEMBER INFORMATION
                 Positioned(
                   left: width * .055,
                   top: height * .485,
@@ -1277,7 +1858,8 @@ Future<void> _loadPurchaseHistory() async {
                   bottom: height * .045,
                   child: Column(
                     crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                        CrossAxisAlignment
+                            .start,
                     children: [
                       _cardField(
                         'MEMBER NAME',
@@ -1304,7 +1886,6 @@ Future<void> _loadPurchaseHistory() async {
                   ),
                 ),
 
-                // BARCODE ON CARD
                 Positioned(
                   right: width * .035,
                   bottom: height * .065,
@@ -1333,21 +1914,21 @@ Future<void> _loadPurchaseHistory() async {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
-          final height = width * 53.98 / 85.60;
+          final height =
+              width * 53.98 / 85.60;
 
           return SizedBox(
             height: height,
             child: Stack(
-              clipBehavior: Clip.hardEdge,
+              clipBehavior:
+                  Clip.hardEdge,
               children: [
-                // WHITE BASE
                 Positioned.fill(
                   child: Container(
                     color: Colors.white,
                   ),
                 ),
 
-                // BLUE HEADER
                 Positioned(
                   left: 0,
                   right: 0,
@@ -1356,7 +1937,8 @@ Future<void> _loadPurchaseHistory() async {
                   child: Container(
                     decoration:
                         const BoxDecoration(
-                      gradient: LinearGradient(
+                      gradient:
+                          LinearGradient(
                         begin:
                             Alignment.centerLeft,
                         end:
@@ -1371,34 +1953,40 @@ Future<void> _loadPurchaseHistory() async {
                   ),
                 ),
 
-                // SOCIAL ICONS
                 Positioned(
                   left: width * .035,
                   top: height * .045,
                   child: Row(
                     children: [
-                      _socialCircle(Icons.facebook),
+                      _socialCircle(
+                        Icons.facebook,
+                      ),
                       const SizedBox(width: 4),
                       _socialCircle(
                         Icons.camera_alt_outlined,
                       ),
                       const SizedBox(width: 4),
-                      _socialCircle(Icons.music_note),
+                      _socialCircle(
+                        Icons.music_note,
+                      ),
                       const SizedBox(width: 4),
-                      _socialCircle(Icons.chat),
+                      _socialCircle(
+                        Icons.chat,
+                      ),
                     ],
                   ),
                 ),
 
-                // HASANI BOOKS + PHONE
                 Positioned(
                   left: width * .205,
                   right: width * .035,
                   top: height * .038,
                   height: height * .10,
                   child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
+                    fit:
+                        BoxFit.scaleDown,
+                    alignment:
+                        Alignment.centerLeft,
                     child: Text(
                       'hasaniBOOKS  |  +60 19-475 7733',
                       maxLines: 1,
@@ -1413,7 +2001,6 @@ Future<void> _loadPurchaseHistory() async {
                   ),
                 ),
 
-                // SMALL LOGO ON RIGHT
                 Positioned(
                   right: width * .035,
                   top: height * .025,
@@ -1422,7 +2009,8 @@ Future<void> _loadPurchaseHistory() async {
                   child: Image.asset(
                     logoAsset,
                     fit: BoxFit.contain,
-                    alignment: Alignment.centerRight,
+                    alignment:
+                        Alignment.centerRight,
                     errorBuilder:
                         (_, __, ___) {
                       return const SizedBox.shrink();
@@ -1430,7 +2018,6 @@ Future<void> _loadPurchaseHistory() async {
                   ),
                 ),
 
-                // RED LINE
                 Positioned(
                   left: 0,
                   right: 0,
@@ -1441,15 +2028,16 @@ Future<void> _loadPurchaseHistory() async {
                   ),
                 ),
 
-                // HORIZONTAL MEMBER DISCOUNT CARD
                 Positioned(
                   left: width * .055,
                   right: width * .055,
                   top: height * .235,
                   height: height * .08,
                   child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
+                    fit:
+                        BoxFit.scaleDown,
+                    alignment:
+                        Alignment.centerLeft,
                     child: Text(
                       'MEMBER DISCOUNT CARD',
                       maxLines: 1,
@@ -1465,7 +2053,6 @@ Future<void> _loadPurchaseHistory() async {
                   ),
                 ),
 
-                // TERMS
                 Positioned(
                   left: width * .055,
                   right: width * .055,
@@ -1473,9 +2060,11 @@ Future<void> _loadPurchaseHistory() async {
                   bottom: height * .155,
                   child: Column(
                     mainAxisAlignment:
-                        MainAxisAlignment.spaceEvenly,
+                        MainAxisAlignment
+                            .spaceEvenly,
                     crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                        CrossAxisAlignment
+                            .start,
                     children: [
                       _backRule(
                         'Kad ini bukan kad kredit.',
@@ -1509,7 +2098,6 @@ Future<void> _loadPurchaseHistory() async {
                   ),
                 ),
 
-                // FOOTER
                 Positioned(
                   left: 0,
                   right: 0,
@@ -1518,12 +2106,14 @@ Future<void> _loadPurchaseHistory() async {
                   child: Container(
                     padding:
                         EdgeInsets.symmetric(
-                      horizontal: width * .045,
+                      horizontal:
+                          width * .045,
                       vertical: 3,
                     ),
                     decoration:
                         const BoxDecoration(
-                      gradient: LinearGradient(
+                      gradient:
+                          LinearGradient(
                         colors: [
                           Color(0xff353d99),
                           Color(0xff3d3ca0),
@@ -1538,9 +2128,11 @@ Future<void> _loadPurchaseHistory() async {
                     ),
                     child: Column(
                       mainAxisAlignment:
-                          MainAxisAlignment.center,
+                          MainAxisAlignment
+                              .center,
                       crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                          CrossAxisAlignment
+                              .start,
                       children: [
                         _fitFooterText(
                           'Hasani Edar Sdn. Bhd.',
@@ -1574,14 +2166,17 @@ Future<void> _loadPurchaseHistory() async {
       width: double.infinity,
       child: FittedBox(
         fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
+        alignment:
+            Alignment.centerLeft,
         child: Text(
           text,
           maxLines: 1,
           style: TextStyle(
             color: Colors.white,
-            fontSize: fontSize.clamp(6.0, 14.0),
-            fontWeight: FontWeight.w800,
+            fontSize:
+                fontSize.clamp(6.0, 14.0),
+            fontWeight:
+                FontWeight.w800,
           ),
         ),
       ),
@@ -1602,7 +2197,8 @@ Future<void> _loadPurchaseHistory() async {
         borderRadius:
             BorderRadius.circular(15),
         border: Border.all(
-          color: const Color(0xffdfe4ee),
+          color:
+              const Color(0xffdfe4ee),
         ),
         boxShadow: [
           BoxShadow(
@@ -1615,7 +2211,8 @@ Future<void> _loadPurchaseHistory() async {
           ),
         ],
       ),
-      clipBehavior: Clip.antiAlias,
+      clipBehavior:
+          Clip.antiAlias,
       child: child,
     );
   }
@@ -1629,16 +2226,20 @@ Future<void> _loadPurchaseHistory() async {
           vertical: 4,
         ),
         decoration: BoxDecoration(
-          color: const Color(0xffeef1f6),
+          color:
+              const Color(0xffeef1f6),
           borderRadius:
               BorderRadius.circular(20),
         ),
         child: Text(
           text,
-          style: const TextStyle(
-            color: Color(0xff59657a),
+          style:
+              const TextStyle(
+            color:
+                Color(0xff59657a),
             fontSize: 10,
-            fontWeight: FontWeight.w700,
+            fontWeight:
+                FontWeight.w700,
           ),
         ),
       ),
@@ -1653,17 +2254,21 @@ Future<void> _loadPurchaseHistory() async {
   }) {
     final valueSize =
         allowFullName
-            ? (cardHeight * .052).clamp(7.0, 16.0)
-            : (cardHeight * .052).clamp(7.0, 16.0);
+            ? (cardHeight * .052)
+                .clamp(7.0, 16.0)
+            : (cardHeight * .052)
+                .clamp(7.0, 16.0);
 
     return Padding(
       padding:
           EdgeInsets.only(
-        bottom: cardHeight * .018,
+        bottom:
+            cardHeight * .018,
       ),
       child: Column(
         crossAxisAlignment:
-            CrossAxisAlignment.start,
+            CrossAxisAlignment
+                .start,
         children: [
           Text(
             label,
@@ -1682,15 +2287,19 @@ Future<void> _loadPurchaseHistory() async {
           SizedBox(
             width: double.infinity,
             child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
+              fit:
+                  BoxFit.scaleDown,
+              alignment:
+                  Alignment.centerLeft,
               child: Text(
                 value,
                 maxLines: 1,
                 softWrap: false,
                 style: TextStyle(
                   color:
-                      const Color(0xff111111),
+                      const Color(
+                    0xff111111,
+                  ),
                   fontSize: valueSize,
                   height: 1.1,
                   fontWeight:
@@ -1713,9 +2322,11 @@ Future<void> _loadPurchaseHistory() async {
       child: Text(
         text,
         maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+        overflow:
+            TextOverflow.ellipsis,
         style: TextStyle(
-          color: const Color(0xff101010),
+          color:
+              const Color(0xff101010),
           fontSize:
               (cardHeight * .030)
                   .clamp(5.5, 9.5),
@@ -1733,11 +2344,13 @@ Future<void> _loadPurchaseHistory() async {
     return Container(
       width: 18,
       height: 18,
-      decoration: const BoxDecoration(
+      decoration:
+          const BoxDecoration(
         color: Color(0xff181818),
         shape: BoxShape.circle,
       ),
-      alignment: Alignment.center,
+      alignment:
+          Alignment.center,
       child: Icon(
         icon,
         color: Colors.white,
@@ -1747,7 +2360,7 @@ Future<void> _loadPurchaseHistory() async {
   }
 
   // ============================================================
-  // MEMBERSHIP BARCODE
+  // BARCODE
   // ============================================================
 
   Widget _membershipBarcode(
@@ -1755,15 +2368,19 @@ Future<void> _loadPurchaseHistory() async {
     bool showText = true,
     bool border = false,
   }) {
-    final barcode = BarcodeWidget(
-      barcode: Barcode.code128(),
+    final barcode =
+        BarcodeWidget(
+      barcode:
+          Barcode.code128(),
       data: membership.isEmpty
           ? '000000000000'
           : membership,
       drawText: showText,
-      style: const TextStyle(
+      style:
+          const TextStyle(
         fontSize: 8,
-        fontWeight: FontWeight.w700,
+        fontWeight:
+            FontWeight.w700,
         color: Colors.black,
       ),
       errorBuilder:
@@ -1771,10 +2388,12 @@ Future<void> _loadPurchaseHistory() async {
         return Center(
           child: Text(
             membership,
-            style: const TextStyle(
+            style:
+                const TextStyle(
               fontSize: 9,
               color: Colors.black,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+                  FontWeight.bold,
             ),
           ),
         );
@@ -1793,10 +2412,13 @@ Future<void> _loadPurchaseHistory() async {
         5,
         3,
       ),
-      decoration: BoxDecoration(
+      decoration:
+          BoxDecoration(
         color: Colors.white,
-        border: Border.all(
-          color: const Color(0xff8994a8),
+        border:
+            Border.all(
+          color:
+              const Color(0xff8994a8),
           width: 1.2,
         ),
         borderRadius:
@@ -1804,7 +2426,8 @@ Future<void> _loadPurchaseHistory() async {
         boxShadow: [
           BoxShadow(
             color:
-                Colors.black.withValues(
+                Colors.black
+                    .withValues(
               alpha: .14,
             ),
             blurRadius: 7,
@@ -1827,74 +2450,86 @@ Future<void> _loadPurchaseHistory() async {
 
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(
+      shape:
+          RoundedRectangleBorder(
         borderRadius:
             BorderRadius.circular(16),
-        side: const BorderSide(
-          color: Color(0xffe8ebf2),
+        side:
+            const BorderSide(
+          color:
+              Color(0xffe8ebf2),
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding:
+            const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment:
-              CrossAxisAlignment.start,
+              CrossAxisAlignment
+                  .start,
           children: [
             const Text(
               'Membership Barcode',
-              style: TextStyle(
+              style:
+                  TextStyle(
                 color: darkText,
                 fontSize: 17,
-                fontWeight: FontWeight.w800,
+                fontWeight:
+                    FontWeight.w800,
               ),
             ),
-
             const SizedBox(height: 5),
-
             const Text(
               'Show this barcode when your membership '
               'needs to be verified.',
-              style: TextStyle(
+              style:
+                  TextStyle(
                 color: mutedText,
                 fontSize: 12,
                 height: 1.4,
               ),
             ),
-
             const SizedBox(height: 15),
-
             Container(
               width: double.infinity,
               height: 105,
               padding:
-                  const EdgeInsets.symmetric(
+                  const EdgeInsets
+                      .symmetric(
                 horizontal: 16,
                 vertical: 10,
               ),
-              decoration: BoxDecoration(
+              decoration:
+                  BoxDecoration(
                 color: Colors.white,
                 borderRadius:
-                    BorderRadius.circular(10),
-                border: Border.all(
+                    BorderRadius.circular(
+                  10,
+                ),
+                border:
+                    Border.all(
                   color:
-                      const Color(0xffdfe4ee),
+                      const Color(
+                    0xffdfe4ee,
+                  ),
                 ),
               ),
-              child: _membershipBarcode(
+              child:
+                  _membershipBarcode(
                 membership,
                 showText: true,
               ),
             ),
-
             const SizedBox(height: 8),
-
             Center(
               child: Text(
                 membership,
-                style: const TextStyle(
+                style:
+                    const TextStyle(
                   color: darkText,
                   fontSize: 12,
-                  fontWeight: FontWeight.w800,
+                  fontWeight:
+                      FontWeight.w800,
                   letterSpacing: 1,
                 ),
               ),
@@ -1920,15 +2555,18 @@ Future<void> _loadPurchaseHistory() async {
           children: [
             Expanded(
               child: _statCard(
-                title: 'Available Points',
+                title:
+                    'Available Points',
                 value: '$points',
-                subtitle: 'Member points',
+                subtitle:
+                    'Member points',
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _statCard(
-                title: 'Total Purchase',
+                title:
+                    'Total Purchase',
                 value:
                     'RM ${totalSpend.toStringAsFixed(2)}',
                 subtitle:
@@ -1940,8 +2578,10 @@ Future<void> _loadPurchaseHistory() async {
         const SizedBox(height: 10),
         _statCard(
           title: 'Transactions',
-          value: '$transactionCount',
-          subtitle: 'Purchase records',
+          value:
+              '$transactionCount',
+          subtitle:
+              'Purchase records',
         ),
       ],
     );
@@ -1955,12 +2595,15 @@ Future<void> _loadPurchaseHistory() async {
     return Container(
       padding:
           const EdgeInsets.all(18),
-      decoration: BoxDecoration(
+      decoration:
+          BoxDecoration(
         color: Colors.white,
         borderRadius:
             BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xffe8ebf2),
+        border:
+            Border.all(
+          color:
+              const Color(0xffe8ebf2),
         ),
       ),
       child: Column(
@@ -1969,8 +2612,10 @@ Future<void> _loadPurchaseHistory() async {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: Color(0xff788398),
+            style:
+                const TextStyle(
+              color:
+                  Color(0xff788398),
               fontSize: 12,
             ),
           ),
@@ -1980,17 +2625,21 @@ Future<void> _loadPurchaseHistory() async {
             maxLines: 1,
             overflow:
                 TextOverflow.ellipsis,
-            style: const TextStyle(
+            style:
+                const TextStyle(
               color: darkText,
               fontSize: 22,
-              fontWeight: FontWeight.w900,
+              fontWeight:
+                  FontWeight.w900,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: const TextStyle(
-              color: Color(0xff8b94a6),
+            style:
+                const TextStyle(
+              color:
+                  Color(0xff8b94a6),
               fontSize: 11,
             ),
           ),
@@ -2015,28 +2664,36 @@ Future<void> _loadPurchaseHistory() async {
           const EdgeInsets.only(
         bottom: 10,
       ),
-      shape: RoundedRectangleBorder(
+      shape:
+          RoundedRectangleBorder(
         borderRadius:
             BorderRadius.circular(16),
-        side: const BorderSide(
-          color: Color(0xffe8ebf2),
+        side:
+            const BorderSide(
+          color:
+              Color(0xffe8ebf2),
         ),
       ),
       child: ListTile(
         contentPadding:
-            const EdgeInsets.symmetric(
+            const EdgeInsets
+                .symmetric(
           horizontal: 15,
           vertical: 5,
         ),
         leading: Container(
           width: 44,
           height: 44,
-          decoration: BoxDecoration(
-            color: blue.withValues(
+          decoration:
+              BoxDecoration(
+            color:
+                blue.withValues(
               alpha: .08,
             ),
             borderRadius:
-                BorderRadius.circular(12),
+                BorderRadius.circular(
+              12,
+            ),
           ),
           child: Icon(
             icon,
@@ -2045,21 +2702,26 @@ Future<void> _loadPurchaseHistory() async {
         ),
         title: Text(
           title,
-          style: const TextStyle(
+          style:
+              const TextStyle(
             color: darkText,
-            fontWeight: FontWeight.w800,
+            fontWeight:
+                FontWeight.w800,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: const TextStyle(
+          style:
+              const TextStyle(
             color: mutedText,
             fontSize: 12,
           ),
         ),
-        trailing: const Icon(
+        trailing:
+            const Icon(
           Icons.chevron_right,
-          color: Color(0xff687386),
+          color:
+              Color(0xff687386),
         ),
         onTap: onTap,
       ),
@@ -2067,137 +2729,39 @@ Future<void> _loadPurchaseHistory() async {
   }
 
   // ============================================================
-  // PURCHASE HISTORY
-  // ============================================================
-
-  /*Widget _buildPurchasesPage() {
-    final purchases =
-        dashboard?['purchases'] as List? ?? [];
-
-    return _pageScroll(
-      children: [
-        _pageHeading(
-          eyebrow: 'MEMBER ACTIVITY',
-          title: 'Purchase History',
-          description:
-              'Your Hasani Books purchase records.',
-        ),
-
-        if (purchases.isEmpty)
-          _emptyFeature(
-            icon: Icons.receipt_long_outlined,
-            title: 'No purchases found',
-            description:
-                'There are no purchase records available.',
-          ),
-
-        ...purchases.map(
-          (purchase) {
-            if (purchase is! Map) {
-              return const SizedBox.shrink();
-            }
-
-            final p =
-                Map<String, dynamic>.from(
-              purchase,
-            );
-
-            final total =
-                _doubleValue(p['total']);
-
-            return Card(
-              elevation: 0,
-              margin:
-                  const EdgeInsets.only(
-                bottom: 12,
-              ),
-              shape:
-                  RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(16),
-                side: const BorderSide(
-                  color: Color(0xffe8ebf2),
-                ),
-              ),
-              child: ListTile(
-                contentPadding:
-                    const EdgeInsets.all(16),
-                leading: CircleAvatar(
-                  backgroundColor:
-                      blue.withValues(
-                    alpha: .08,
-                  ),
-                  child: const Icon(
-                    Icons.receipt_long,
-                    color: blue,
-                  ),
-                ),
-                title: Text(
-                  'Receipt #${p['receiptNo'] ?? '-'}',
-                  style:
-                      const TextStyle(
-                    fontWeight:
-                        FontWeight.w800,
-                    color: darkText,
-                  ),
-                ),
-                subtitle: Padding(
-                  padding:
-                      const EdgeInsets.only(
-                    top: 5,
-                  ),
-                  child: Text(
-                    '${p['date'] ?? '-'}  •  '
-                    '+${p['points'] ?? 0} points',
-                    style:
-                        const TextStyle(
-                      color: mutedText,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                trailing: Text(
-                  'RM ${total.toStringAsFixed(2)}',
-                  style:
-                      const TextStyle(
-                    color: darkText,
-                    fontWeight:
-                        FontWeight.w900,
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }*/
-
-  // ============================================================
   // POINTS PAGE
   // ============================================================
 
   Widget _buildPointsPage() {
     final points =
-        _numberValue(customer?['points']);
+        _numberValue(
+      customer?['points'],
+    );
 
     final purchases =
-        dashboard?['purchases'] as List? ?? [];
+        dashboard?['purchases']
+                as List? ??
+            [];
 
     double spend = 0;
 
     for (final item in purchases) {
       if (item is Map) {
         spend +=
-            _doubleValue(item['total']);
+            _doubleValue(
+          item['total'] ??
+              item['amount'],
+        );
       }
     }
 
     return _pageScroll(
       children: [
         _pageHeading(
-          eyebrow: 'MEMBERSHIP BENEFITS',
-          title: 'Member Points',
+          eyebrow:
+              'MEMBERSHIP BENEFITS',
+          title:
+              'Member Points',
           description:
               'Your available Hasani Books member points.',
         ),
@@ -2206,31 +2770,41 @@ Future<void> _loadPurchaseHistory() async {
           children: [
             Expanded(
               child: _statCard(
-                title: 'Available Points',
-                value: '$points',
-                subtitle: 'Current balance',
+                title:
+                    'Available Points',
+                value:
+                    '$points',
+                subtitle:
+                    'Current balance',
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(
+                width: 12),
             Expanded(
               child: _statCard(
-                title: 'Purchase Value',
+                title:
+                    'Purchase Value',
                 value:
                     'RM ${spend.toStringAsFixed(2)}',
-                subtitle: 'Verified purchases',
+                subtitle:
+                    'Verified purchases',
               ),
             ),
           ],
         ),
 
-        const SizedBox(height: 18),
+        const SizedBox(
+            height: 18),
 
         _simpleInformationCard(
-          icon: Icons.stars_outlined,
-          title: 'Points Earned',
+          icon:
+              Icons.stars_outlined,
+          title:
+              'Points Earned',
           description:
               'Points are calculated from your recorded purchases.',
-          value: '$points points',
+          value:
+              '$points points',
         ),
       ],
     );
@@ -2241,17 +2815,23 @@ Future<void> _loadPurchaseHistory() async {
   // ============================================================
 
   Widget _buildPersonalPage() {
-    final data = customer ?? {};
+    final data =
+        customer ?? {};
 
-    final fields = <Map<String, String>>[
+    final fields =
+        <Map<String, String>>[
       {
         'label': 'Full Name',
         'value':
-            data['name']?.toString() ?? '—',
+            data['name']
+                    ?.toString() ??
+                '—',
       },
       {
-        'label': 'Membership Card',
-        'value': _membershipNumber(),
+        'label':
+            'Membership Card',
+        'value':
+            _membershipNumber(),
       },
       {
         'label': 'Points',
@@ -2259,7 +2839,8 @@ Future<void> _loadPurchaseHistory() async {
             '${_numberValue(data['points'])}',
       },
       {
-        'label': 'Expiry Date',
+        'label':
+            'Expiry Date',
         'value':
             _firstValue([
                   data['expiry'],
@@ -2269,7 +2850,8 @@ Future<void> _loadPurchaseHistory() async {
                 '—',
       },
       {
-        'label': 'Issue Branch',
+        'label':
+            'Issue Branch',
         'value':
             _firstValue([
                   data['issueBranch'],
@@ -2311,8 +2893,10 @@ Future<void> _loadPurchaseHistory() async {
     return _pageScroll(
       children: [
         _pageHeading(
-          eyebrow: 'HASANI MEMBER',
-          title: 'Personal Information',
+          eyebrow:
+              'HASANI MEMBER',
+          title:
+              'Personal Information',
           description:
               'Member information returned from the customer account.',
         ),
@@ -2325,29 +2909,40 @@ Future<void> _loadPurchaseHistory() async {
               bottom: 10,
             ),
             padding:
-                const EdgeInsets.all(17),
-            decoration: BoxDecoration(
+                const EdgeInsets.all(
+              17,
+            ),
+            decoration:
+                BoxDecoration(
               color: Colors.white,
               borderRadius:
-                  BorderRadius.circular(16),
-              border: Border.all(
+                  BorderRadius.circular(
+                16,
+              ),
+              border:
+                  Border.all(
                 color:
-                    const Color(0xffe8ebf2),
+                    const Color(
+                  0xffe8ebf2,
+                ),
               ),
             ),
             child: Column(
               crossAxisAlignment:
-                  CrossAxisAlignment.start,
+                  CrossAxisAlignment
+                      .start,
               children: [
                 Text(
                   field['label']!,
                   style:
                       const TextStyle(
-                    color: Color(0xff788398),
+                    color:
+                        Color(0xff788398),
                     fontSize: 12,
                   ),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(
+                    height: 5),
                 Text(
                   field['value']!,
                   style:
@@ -2372,12 +2967,15 @@ Future<void> _loadPurchaseHistory() async {
 
   Widget _buildRewardsPage() {
     return _featurePage(
-      eyebrow: 'MEMBERSHIP BENEFITS',
+      eyebrow:
+          'MEMBERSHIP BENEFITS',
       title: 'Rewards',
       description:
           'Rewards available for your membership.',
-      icon: Icons.card_giftcard_outlined,
-      featureTitle: 'Member Rewards',
+      icon:
+          Icons.card_giftcard_outlined,
+      featureTitle:
+          'Member Rewards',
       featureDescription:
           'Your Hasani Books membership rewards will appear here.',
     );
@@ -2389,12 +2987,15 @@ Future<void> _loadPurchaseHistory() async {
 
   Widget _buildOffersPage() {
     return _featurePage(
-      eyebrow: 'SPECIAL OFFERS',
+      eyebrow:
+          'SPECIAL OFFERS',
       title: 'Offers',
       description:
           'Member offers and promotions.',
-      icon: Icons.local_offer_outlined,
-      featureTitle: 'Hasani Books Offers',
+      icon:
+          Icons.local_offer_outlined,
+      featureTitle:
+          'Hasani Books Offers',
       featureDescription:
           'Special member offers and promotions will appear here.',
     );
@@ -2406,11 +3007,14 @@ Future<void> _loadPurchaseHistory() async {
 
   Widget _buildStorePage() {
     return _featurePage(
-      eyebrow: 'SHOP ONLINE',
-      title: 'Online Store',
+      eyebrow:
+          'SHOP ONLINE',
+      title:
+          'Online Store',
       description:
           'Hasani Books online store.',
-      icon: Icons.shopping_cart_outlined,
+      icon:
+          Icons.shopping_cart_outlined,
       featureTitle:
           'Hasani Books Online Store',
       featureDescription:
@@ -2428,7 +3032,8 @@ Future<void> _loadPurchaseHistory() async {
       title: 'Locations',
       description:
           'Find Hasani Books branches.',
-      icon: Icons.location_on_outlined,
+      icon:
+          Icons.location_on_outlined,
       featureTitle:
           'Hasani Books Store Locations',
       featureDescription:
@@ -2458,7 +3063,8 @@ Future<void> _loadPurchaseHistory() async {
         _emptyFeature(
           icon: icon,
           title: featureTitle,
-          description: featureDescription,
+          description:
+              featureDescription,
         ),
       ],
     );
@@ -2474,7 +3080,8 @@ Future<void> _loadPurchaseHistory() async {
     return SingleChildScrollView(
       physics:
           const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(
+      padding:
+          const EdgeInsets.fromLTRB(
         16,
         22,
         16,
@@ -2504,26 +3111,32 @@ Future<void> _loadPurchaseHistory() async {
         children: [
           Text(
             eyebrow,
-            style: const TextStyle(
-              color: Color(0xff7c879c),
+            style:
+                const TextStyle(
+              color:
+                  Color(0xff7c879c),
               fontSize: 11,
               letterSpacing: 1.4,
-              fontWeight: FontWeight.w800,
+              fontWeight:
+                  FontWeight.w800,
             ),
           ),
           const SizedBox(height: 5),
           Text(
             title,
-            style: const TextStyle(
+            style:
+                const TextStyle(
               color: darkText,
               fontSize: 29,
-              fontWeight: FontWeight.w900,
+              fontWeight:
+                  FontWeight.w900,
             ),
           ),
           const SizedBox(height: 5),
           Text(
             description,
-            style: const TextStyle(
+            style:
+                const TextStyle(
               color: mutedText,
               fontSize: 14,
             ),
@@ -2545,12 +3158,17 @@ Future<void> _loadPurchaseHistory() async {
         horizontal: 24,
         vertical: 40,
       ),
-      decoration: BoxDecoration(
+      decoration:
+          BoxDecoration(
         color: Colors.white,
         borderRadius:
-            BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xffe8ebf2),
+            BorderRadius.circular(
+          18,
+        ),
+        border:
+            Border.all(
+          color:
+              const Color(0xffe8ebf2),
         ),
       ),
       child: Column(
@@ -2558,9 +3176,12 @@ Future<void> _loadPurchaseHistory() async {
           Container(
             width: 72,
             height: 72,
-            decoration: BoxDecoration(
+            decoration:
+                BoxDecoration(
               color:
-                  blue.withValues(alpha: .08),
+                  blue.withValues(
+                alpha: .08,
+              ),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -2569,21 +3190,28 @@ Future<void> _loadPurchaseHistory() async {
               size: 36,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(
+              height: 18),
           Text(
             title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
+            textAlign:
+                TextAlign.center,
+            style:
+                const TextStyle(
               color: darkText,
               fontSize: 20,
-              fontWeight: FontWeight.w900,
+              fontWeight:
+                  FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(
+              height: 8),
           Text(
             description,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
+            textAlign:
+                TextAlign.center,
+            style:
+                const TextStyle(
               color: mutedText,
               fontSize: 13,
               height: 1.5,
@@ -2604,12 +3232,17 @@ Future<void> _loadPurchaseHistory() async {
       width: double.infinity,
       padding:
           const EdgeInsets.all(20),
-      decoration: BoxDecoration(
+      decoration:
+          BoxDecoration(
         color: Colors.white,
         borderRadius:
-            BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xffe8ebf2),
+            BorderRadius.circular(
+          18,
+        ),
+        border:
+            Border.all(
+          color:
+              const Color(0xffe8ebf2),
         ),
       ),
       child: Row(
@@ -2617,11 +3250,16 @@ Future<void> _loadPurchaseHistory() async {
           Container(
             width: 54,
             height: 54,
-            decoration: BoxDecoration(
+            decoration:
+                BoxDecoration(
               color:
-                  blue.withValues(alpha: .08),
+                  blue.withValues(
+                alpha: .08,
+              ),
               borderRadius:
-                  BorderRadius.circular(15),
+                  BorderRadius.circular(
+                15,
+              ),
             ),
             child: Icon(
               icon,
@@ -2629,11 +3267,13 @@ Future<void> _loadPurchaseHistory() async {
               size: 28,
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(
+              width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment:
-                  CrossAxisAlignment.start,
+                  CrossAxisAlignment
+                      .start,
               children: [
                 Text(
                   title,
@@ -2645,7 +3285,8 @@ Future<void> _loadPurchaseHistory() async {
                         FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(
+                    height: 4),
                 Text(
                   description,
                   style:
@@ -2658,15 +3299,19 @@ Future<void> _loadPurchaseHistory() async {
               ],
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(
+              width: 10),
           Flexible(
             child: Text(
               value,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
+              textAlign:
+                  TextAlign.right,
+              style:
+                  const TextStyle(
                 color: blue,
                 fontSize: 16,
-                fontWeight: FontWeight.w900,
+                fontWeight:
+                    FontWeight.w900,
               ),
             ),
           ),
@@ -2692,7 +3337,8 @@ Future<void> _loadPurchaseHistory() async {
   }
 
   String _initial(String name) {
-    final clean = name.trim();
+    final clean =
+        name.trim();
 
     if (clean.isEmpty) {
       return 'M';
@@ -2706,8 +3352,11 @@ Future<void> _loadPurchaseHistory() async {
   String? _firstValue(
     List<dynamic> values,
   ) {
-    for (final value in values) {
-      if (value == null) continue;
+    for (final value
+        in values) {
+      if (value == null) {
+        continue;
+      }
 
       final text =
           value.toString().trim();
@@ -2721,24 +3370,30 @@ Future<void> _loadPurchaseHistory() async {
     return null;
   }
 
-  int _numberValue(dynamic value) {
+  int _numberValue(
+    dynamic value,
+  ) {
     if (value is num) {
       return value.toInt();
     }
 
     return int.tryParse(
-          value?.toString() ?? '',
+          value?.toString() ??
+              '',
         ) ??
         0;
   }
 
-  double _doubleValue(dynamic value) {
+  double _doubleValue(
+    dynamic value,
+  ) {
     if (value is num) {
       return value.toDouble();
     }
 
     return double.tryParse(
-          value?.toString() ?? '',
+          value?.toString() ??
+              '',
         ) ??
         0;
   }
