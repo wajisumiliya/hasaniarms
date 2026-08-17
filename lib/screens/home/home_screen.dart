@@ -20,7 +20,11 @@ class _HomeScreenState extends State<HomeScreen> {
       TextEditingController();
 
   Map<String, dynamic>? customer;
-  Map<String, dynamic>? dashboard;
+Map<String, dynamic>? dashboard;
+
+List<dynamic> purchaseHistory = [];
+bool purchasesLoading = false;
+String? purchasesError;
 
   String? errorMessage;
 
@@ -189,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         const Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'CUSTOMER PORTAL',
+                            'HASANI MEMBER PORTAL',
                             style: TextStyle(
                               color: Color(0xff2358d8),
                               fontSize: 12,
@@ -404,8 +408,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(width: 9),
                               Expanded(
                                 child: Text(
-                                  'For testing, use your existing '
-                                  'test membership and password.',
+                                  'use your existing '
+                                  'membership/IC No and password.',
                                   style: TextStyle(
                                     color: theme
                                         .colorScheme
@@ -423,10 +427,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 24),
 
                         const Text(
-                          'HASANI BOOKS',
+                          'Created and Hosted by Hasani Books Edar Sdn Bhd',
                           style: TextStyle(
                             color: Color(0xff98a2b3),
-                            fontSize: 11,
+                            fontSize: 7,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 1.5,
                           ),
@@ -915,7 +919,7 @@ class _HomeScreenState extends State<HomeScreen> {
             'Welcome Back, $name',
             style: const TextStyle(
               color: darkText,
-              fontSize: 29,
+              fontSize: 20,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -926,7 +930,7 @@ class _HomeScreenState extends State<HomeScreen> {
             'Your membership, points and purchases in one place.',
             style: TextStyle(
               color: mutedText,
-              fontSize: 14,
+              fontSize: 10,
             ),
           ),
 
@@ -1068,7 +1072,53 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     } catch (_) {}
   }
+Future<void> _loadPurchaseHistory() async {
+  if (purchasesLoading) return;
 
+  setState(() {
+    purchasesLoading = true;
+    purchasesError = null;
+  });
+
+  try {
+    final response = await api.get(
+      '/api/customer/purchases',
+    );
+
+    if (!mounted) return;
+
+    List<dynamic> purchases = [];
+
+    if (response is List) {
+      purchases = response;
+    } else if (response is Map) {
+      final data = response['purchases'];
+
+      if (data is List) {
+        purchases = data;
+      } else if (response['data'] is List) {
+        purchases = response['data'];
+      } else if (response['transactions'] is List) {
+        purchases = response['transactions'];
+      } else if (response['history'] is List) {
+        purchases = response['history'];
+      }
+    }
+
+    setState(() {
+      purchaseHistory = purchases;
+      purchasesLoading = false;
+    });
+  } catch (e) {
+    if (!mounted) return;
+
+    setState(() {
+      purchasesLoading = false;
+      purchasesError =
+          e.toString().replaceFirst('Exception: ', '');
+    });
+  }
+}
   // ============================================================
   // FRONT MEMBERSHIP CARD
   // ============================================================
@@ -2020,7 +2070,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // PURCHASE HISTORY
   // ============================================================
 
-  Widget _buildPurchasesPage() {
+  /*Widget _buildPurchasesPage() {
     final purchases =
         dashboard?['purchases'] as List? ?? [];
 
@@ -2121,7 +2171,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ],
     );
-  }
+  }*/
 
   // ============================================================
   // POINTS PAGE
