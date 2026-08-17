@@ -34,6 +34,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String currentView = 'dashboard';
 
+  // ============================================================
+  // HASANI BOOKS COLORS
+  // ============================================================
+
   static const Color blue = Color(0xff263d92);
   static const Color blue2 = Color(0xff30479e);
   static const Color blue3 = Color(0xff24377f);
@@ -44,6 +48,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const String logoAsset =
       'web/assets/hasani-books-logo.jpg';
+
+  // ============================================================
+  // DISPOSE
+  // ============================================================
 
   @override
   void dispose() {
@@ -89,17 +97,26 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
 
       setState(() {
-        customer = Map<String, dynamic>.from(customerData);
+        customer =
+            Map<String, dynamic>.from(customerData);
+
         dashboard = dashboardData;
+
         currentView = 'dashboard';
+
         errorMessage = null;
+
+        purchaseHistory = [];
+        purchasesError = null;
+        purchasesLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        errorMessage =
-            e.toString().replaceFirst('Exception: ', '');
+        errorMessage = e
+            .toString()
+            .replaceFirst('Exception: ', '');
       });
     } finally {
       if (!mounted) return;
@@ -129,10 +146,16 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       customer = null;
       dashboard = null;
+
       purchaseHistory = [];
+
+      purchasesLoading = false;
       purchasesError = null;
+
       errorMessage = null;
+
       currentView = 'dashboard';
+
       passwordController.clear();
     });
   }
@@ -183,6 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           MainAxisAlignment.center,
                       children: [
                         _buildLoginLogo(),
+
                         const SizedBox(height: 24),
 
                         const Align(
@@ -795,13 +819,6 @@ class _HomeScreenState extends State<HomeScreen> {
             setState(() {
               currentView = view;
             });
-
-            // IMPORTANT:
-            // Load purchase history immediately
-            // when the Purchase History page opens.
-            if (view == 'purchases') {
-              _loadPurchaseHistory();
-            }
           },
           child: Padding(
             padding:
@@ -891,10 +908,10 @@ class _HomeScreenState extends State<HomeScreen> {
       if (item is Map) {
         totalSpend +=
             _doubleValue(
-          item['total'] ??
-              item['amount'] ??
-              item['grandTotal'],
-        );
+              item['total'] ??
+                  item['amount'] ??
+                  item['grandTotal'],
+            );
       }
     }
 
@@ -991,9 +1008,10 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () {
               setState(() {
                 currentView = 'purchases';
-              });
 
-              _loadPurchaseHistory();
+                purchaseHistory = [];
+                purchasesError = null;
+              });
             },
           ),
 
@@ -1103,51 +1121,44 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      final response = await api.get(
+      final Map<String, dynamic> response =
+          await api.get(
         '/api/customer/purchases',
       );
-
-      if (!mounted) return;
 
       List<dynamic> purchases = [];
 
       // --------------------------------------------------------
-      // API RETURNS DIRECT LIST
+      // Expected API response:
+      //
+      // {
+      //   "purchases": [...]
+      // }
       // --------------------------------------------------------
 
-      if (response is List) {
-        purchases = List<dynamic>.from(response);
+      final data = response['purchases'];
+
+      if (data is List) {
+        purchases =
+            List<dynamic>.from(data);
+      } else if (response['data'] is List) {
+        purchases =
+            List<dynamic>.from(
+          response['data'],
+        );
+      } else if (response['transactions'] is List) {
+        purchases =
+            List<dynamic>.from(
+          response['transactions'],
+        );
+      } else if (response['history'] is List) {
+        purchases =
+            List<dynamic>.from(
+          response['history'],
+        );
       }
 
-      // --------------------------------------------------------
-      // API RETURNS MAP
-      // --------------------------------------------------------
-
-      else if (response is Map) {
-        final data = response['purchases'];
-
-        if (data is List) {
-          purchases = List<dynamic>.from(data);
-        } else if (response['data'] is List) {
-          purchases =
-              List<dynamic>.from(response['data']);
-        } else if (response['transactions'] is List) {
-          purchases =
-              List<dynamic>.from(
-            response['transactions'],
-          );
-        } else if (response['history'] is List) {
-          purchases =
-              List<dynamic>.from(
-            response['history'],
-          );
-        } else if (response['purchaseHistory'] is List) {
-          purchases =
-              List<dynamic>.from(
-            response['purchaseHistory'],
-          );
-        }
-      }
+      if (!mounted) return;
 
       setState(() {
         purchaseHistory = purchases;
@@ -1159,543 +1170,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
       setState(() {
         purchasesLoading = false;
-        purchasesError =
-            e.toString().replaceFirst(
-                  'Exception: ',
-                );
+        purchasesError = e
+            .toString()
+            .replaceFirst(
+              'Exception: ',
+              '',
+            );
       });
     }
-  }
-
-  // ============================================================
-  // PURCHASE HISTORY PAGE
-  // ============================================================
-
-  Widget _buildPurchasesPage() {
-    return RefreshIndicator(
-      onRefresh: _loadPurchaseHistory,
-      child: ListView(
-        physics:
-            const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          16,
-          22,
-          16,
-          40,
-        ),
-        children: [
-          _pageHeading(
-            eyebrow: 'MEMBER ACTIVITY',
-            title: 'Purchase History',
-            description:
-                'Your Hasani Books purchase records.',
-          ),
-
-          // ----------------------------------------------------
-          // LOADING
-          // ----------------------------------------------------
-
-          if (purchasesLoading)
-            Container(
-              width: double.infinity,
-              padding:
-                  const EdgeInsets.symmetric(
-                vertical: 45,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius:
-                    BorderRadius.circular(18),
-                border: Border.all(
-                  color:
-                      const Color(0xffe8ebf2),
-                ),
-              ),
-              child: const Column(
-                children: [
-                  SizedBox(
-                    width: 34,
-                    height: 34,
-                    child:
-                        CircularProgressIndicator(
-                      strokeWidth: 3,
-                      color: blue,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Loading purchase history...',
-                    style: TextStyle(
-                      color: mutedText,
-                      fontSize: 14,
-                      fontWeight:
-                          FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            )
-
-          // ----------------------------------------------------
-          // ERROR
-          // ----------------------------------------------------
-
-          else if (purchasesError != null)
-            _buildPurchaseError()
-
-          // ----------------------------------------------------
-          // EMPTY
-          // ----------------------------------------------------
-
-          else if (purchaseHistory.isEmpty)
-            _buildPurchaseEmpty()
-
-          // ----------------------------------------------------
-          // PURCHASE LIST
-          // ----------------------------------------------------
-
-          else
-            ...purchaseHistory.map(
-              (purchase) {
-                if (purchase is! Map) {
-                  return const SizedBox.shrink();
-                }
-
-                return _buildPurchaseCard(
-                  Map<String, dynamic>.from(
-                    purchase,
-                  ),
-                );
-              },
-            ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // PURCHASE CARD
-  // ============================================================
-
-  Widget _buildPurchaseCard(
-    Map<String, dynamic> purchase,
-  ) {
-    final receipt = _firstValue([
-          purchase['receiptNo'],
-          purchase['receiptNumber'],
-          purchase['receipt'],
-          purchase['invoiceNo'],
-          purchase['invoiceNumber'],
-          purchase['transactionNo'],
-          purchase['transactionNumber'],
-          purchase['id'],
-        ]) ??
-        '-';
-
-    final date = _firstValue([
-          purchase['date'],
-          purchase['purchaseDate'],
-          purchase['transactionDate'],
-          purchase['createdAt'],
-          purchase['datetime'],
-          purchase['timestamp'],
-        ]) ??
-        '-';
-
-    final branch = _firstValue([
-          purchase['branch'],
-          purchase['branchName'],
-          purchase['store'],
-          purchase['storeName'],
-          purchase['location'],
-        ]) ??
-        '';
-
-    final points = _numberValue(
-      purchase['points'] ??
-          purchase['pointsEarned'] ??
-          purchase['earnedPoints'] ??
-          purchase['memberPoints'],
-    );
-
-    final total = _doubleValue(
-      purchase['total'] ??
-          purchase['amount'] ??
-          purchase['grandTotal'] ??
-          purchase['totalAmount'] ??
-          purchase['netTotal'] ??
-          purchase['price'],
-    );
-
-    return Card(
-      elevation: 0,
-      margin:
-          const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.circular(18),
-        side: const BorderSide(
-          color: Color(0xffe8ebf2),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(17),
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color:
-                        blue.withValues(
-                      alpha: .08,
-                    ),
-                    borderRadius:
-                        BorderRadius.circular(
-                      14,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.receipt_long,
-                    color: blue,
-                    size: 25,
-                  ),
-                ),
-
-                const SizedBox(width: 13),
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'RECEIPT',
-                        style: TextStyle(
-                          color: mutedText,
-                          fontSize: 10,
-                          fontWeight:
-                              FontWeight.w800,
-                          letterSpacing: 1,
-                        ),
-                      ),
-
-                      const SizedBox(height: 3),
-
-                      Text(
-                        receipt,
-                        maxLines: 1,
-                        overflow:
-                            TextOverflow.ellipsis,
-                        style:
-                            const TextStyle(
-                          color: darkText,
-                          fontSize: 16,
-                          fontWeight:
-                              FontWeight.w900,
-                        ),
-                      ),
-
-                      const SizedBox(height: 4),
-
-                      Text(
-                        date,
-                        maxLines: 2,
-                        overflow:
-                            TextOverflow.ellipsis,
-                        style:
-                            const TextStyle(
-                          color: mutedText,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(width: 8),
-
-                Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.end,
-                  children: [
-                    const Text(
-                      'TOTAL',
-                      style: TextStyle(
-                        color: mutedText,
-                        fontSize: 9,
-                        fontWeight:
-                            FontWeight.w800,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'RM ${total.toStringAsFixed(2)}',
-                      style:
-                          const TextStyle(
-                        color: darkText,
-                        fontSize: 16,
-                        fontWeight:
-                            FontWeight.w900,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 14),
-
-            const Divider(
-              height: 1,
-              color: Color(0xffedf0f5),
-            ),
-
-            const SizedBox(height: 12),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _purchaseInfo(
-                    Icons.stars_outlined,
-                    'Points',
-                    '+$points',
-                  ),
-                ),
-
-                if (branch.isNotEmpty)
-                  Expanded(
-                    child: _purchaseInfo(
-                      Icons.store_outlined,
-                      'Branch',
-                      branch,
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _purchaseInfo(
-    IconData icon,
-    String label,
-    String value,
-  ) {
-    return Row(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-      children: [
-        Icon(
-          icon,
-          size: 18,
-          color: blue,
-        ),
-        const SizedBox(width: 7),
-        Expanded(
-          child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: mutedText,
-                  fontSize: 10,
-                  fontWeight:
-                      FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                maxLines: 2,
-                overflow:
-                    TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: darkText,
-                  fontSize: 12,
-                  fontWeight:
-                      FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ============================================================
-  // PURCHASE ERROR
-  // ============================================================
-
-  Widget _buildPurchaseError() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(18),
-        border: Border.all(
-          color:
-              Colors.red.withValues(
-            alpha: .18,
-          ),
-        ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 65,
-            height: 65,
-            decoration: BoxDecoration(
-              color:
-                  Colors.red.withValues(
-                alpha: .07,
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.error_outline,
-              color: Colors.red,
-              size: 34,
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
-          const Text(
-            'Unable to load purchases',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: darkText,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-
-          const SizedBox(height: 7),
-
-          Text(
-            purchasesError ??
-                'An unknown error occurred.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: mutedText,
-              fontSize: 13,
-              height: 1.45,
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          SizedBox(
-            height: 46,
-            child: FilledButton.icon(
-              onPressed:
-                  _loadPurchaseHistory,
-              icon: const Icon(
-                Icons.refresh,
-              ),
-              label: const Text(
-                'Try Again',
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // PURCHASE EMPTY
-  // ============================================================
-
-  Widget _buildPurchaseEmpty() {
-    return Container(
-      width: double.infinity,
-      padding:
-          const EdgeInsets.symmetric(
-        horizontal: 24,
-        vertical: 45,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(18),
-        border: Border.all(
-          color:
-              const Color(0xffe8ebf2),
-        ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color:
-                  blue.withValues(
-                alpha: .08,
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.receipt_long_outlined,
-              color: blue,
-              size: 36,
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          const Text(
-            'No purchases found',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: darkText,
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          const Text(
-            'There are no purchase records available '
-            'for this membership yet.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: mutedText,
-              fontSize: 13,
-              height: 1.5,
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          OutlinedButton.icon(
-            onPressed:
-                _loadPurchaseHistory,
-            icon: const Icon(
-              Icons.refresh,
-            ),
-            label: const Text(
-              'Refresh',
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   // ============================================================
@@ -1738,8 +1220,7 @@ class _HomeScreenState extends State<HomeScreen> {
           return SizedBox(
             height: height,
             child: Stack(
-              clipBehavior:
-                  Clip.hardEdge,
+              clipBehavior: Clip.hardEdge,
               children: [
                 Positioned(
                   left: 0,
@@ -1749,8 +1230,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Container(
                     decoration:
                         const BoxDecoration(
-                      gradient:
-                          LinearGradient(
+                      gradient: LinearGradient(
                         begin:
                             Alignment.centerLeft,
                         end:
@@ -1773,8 +1253,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Image.asset(
                     logoAsset,
                     fit: BoxFit.contain,
-                    alignment:
-                        Alignment.centerLeft,
+                    alignment: Alignment.centerLeft,
                     errorBuilder:
                         (_, __, ___) {
                       return const Text(
@@ -1799,10 +1278,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.white,
                       fontSize:
                           (height * .105)
-                              .clamp(
-                        8.0,
-                        20.0,
-                      ),
+                              .clamp(8.0, 20.0),
                       height: 1,
                       fontWeight:
                           FontWeight.w900,
@@ -1818,8 +1294,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     '%',
                     style: TextStyle(
                       color:
-                          Colors.white
-                              .withValues(
+                          Colors.white.withValues(
                         alpha: .10,
                       ),
                       fontSize:
@@ -1843,8 +1318,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Positioned(
                   left: 0,
                   right: 0,
-                  top:
-                      height * .43 + 4,
+                  top: height * .43 + 4,
                   bottom: 0,
                   child: Container(
                     color: Colors.white,
@@ -1858,8 +1332,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   bottom: height * .045,
                   child: Column(
                     crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
+                        CrossAxisAlignment.start,
                     children: [
                       _cardField(
                         'MEMBER NAME',
@@ -1920,8 +1393,7 @@ class _HomeScreenState extends State<HomeScreen> {
           return SizedBox(
             height: height,
             child: Stack(
-              clipBehavior:
-                  Clip.hardEdge,
+              clipBehavior: Clip.hardEdge,
               children: [
                 Positioned.fill(
                   child: Container(
@@ -1937,8 +1409,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Container(
                     decoration:
                         const BoxDecoration(
-                      gradient:
-                          LinearGradient(
+                      gradient: LinearGradient(
                         begin:
                             Alignment.centerLeft,
                         end:
@@ -1958,21 +1429,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   top: height * .045,
                   child: Row(
                     children: [
-                      _socialCircle(
-                        Icons.facebook,
-                      ),
+                      _socialCircle(Icons.facebook),
                       const SizedBox(width: 4),
                       _socialCircle(
                         Icons.camera_alt_outlined,
                       ),
                       const SizedBox(width: 4),
-                      _socialCircle(
-                        Icons.music_note,
-                      ),
+                      _socialCircle(Icons.music_note),
                       const SizedBox(width: 4),
-                      _socialCircle(
-                        Icons.chat,
-                      ),
+                      _socialCircle(Icons.chat),
                     ],
                   ),
                 ),
@@ -1983,8 +1448,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   top: height * .038,
                   height: height * .10,
                   child: FittedBox(
-                    fit:
-                        BoxFit.scaleDown,
+                    fit: BoxFit.scaleDown,
                     alignment:
                         Alignment.centerLeft,
                     child: Text(
@@ -2034,8 +1498,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   top: height * .235,
                   height: height * .08,
                   child: FittedBox(
-                    fit:
-                        BoxFit.scaleDown,
+                    fit: BoxFit.scaleDown,
                     alignment:
                         Alignment.centerLeft,
                     child: Text(
@@ -2060,11 +1523,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   bottom: height * .155,
                   child: Column(
                     mainAxisAlignment:
-                        MainAxisAlignment
-                            .spaceEvenly,
+                        MainAxisAlignment.spaceEvenly,
                     crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
+                        CrossAxisAlignment.start,
                     children: [
                       _backRule(
                         'Kad ini bukan kad kredit.',
@@ -2106,14 +1567,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Container(
                     padding:
                         EdgeInsets.symmetric(
-                      horizontal:
-                          width * .045,
+                      horizontal: width * .045,
                       vertical: 3,
                     ),
                     decoration:
                         const BoxDecoration(
-                      gradient:
-                          LinearGradient(
+                      gradient: LinearGradient(
                         colors: [
                           Color(0xff353d99),
                           Color(0xff3d3ca0),
@@ -2128,11 +1587,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     child: Column(
                       mainAxisAlignment:
-                          MainAxisAlignment
-                              .center,
+                          MainAxisAlignment.center,
                       crossAxisAlignment:
-                          CrossAxisAlignment
-                              .start,
+                          CrossAxisAlignment.start,
                       children: [
                         _fitFooterText(
                           'Hasani Edar Sdn. Bhd.',
@@ -2158,6 +1615,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ============================================================
+  // FOOTER TEXT
+  // ============================================================
+
   Widget _fitFooterText(
     String text,
     double fontSize,
@@ -2166,8 +1627,7 @@ class _HomeScreenState extends State<HomeScreen> {
       width: double.infinity,
       child: FittedBox(
         fit: BoxFit.scaleDown,
-        alignment:
-            Alignment.centerLeft,
+        alignment: Alignment.centerLeft,
         child: Text(
           text,
           maxLines: 1,
@@ -2175,8 +1635,7 @@ class _HomeScreenState extends State<HomeScreen> {
             color: Colors.white,
             fontSize:
                 fontSize.clamp(6.0, 14.0),
-            fontWeight:
-                FontWeight.w800,
+            fontWeight: FontWeight.w800,
           ),
         ),
       ),
@@ -2184,7 +1643,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ============================================================
-  // CARD HELPERS
+  // CARD FRAME
   // ============================================================
 
   Widget _cardFrame({
@@ -2197,8 +1656,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius:
             BorderRadius.circular(15),
         border: Border.all(
-          color:
-              const Color(0xffdfe4ee),
+          color: const Color(0xffdfe4ee),
         ),
         boxShadow: [
           BoxShadow(
@@ -2211,11 +1669,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      clipBehavior:
-          Clip.antiAlias,
+      clipBehavior: Clip.antiAlias,
       child: child,
     );
   }
+
+  // ============================================================
+  // CARD LABEL
+  // ============================================================
 
   Widget _cardLabel(String text) {
     return Center(
@@ -2226,25 +1687,25 @@ class _HomeScreenState extends State<HomeScreen> {
           vertical: 4,
         ),
         decoration: BoxDecoration(
-          color:
-              const Color(0xffeef1f6),
+          color: const Color(0xffeef1f6),
           borderRadius:
               BorderRadius.circular(20),
         ),
         child: Text(
           text,
-          style:
-              const TextStyle(
-            color:
-                Color(0xff59657a),
+          style: const TextStyle(
+            color: Color(0xff59657a),
             fontSize: 10,
-            fontWeight:
-                FontWeight.w700,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
     );
   }
+
+  // ============================================================
+  // CARD FIELD
+  // ============================================================
 
   Widget _cardField(
     String label,
@@ -2262,13 +1723,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding:
           EdgeInsets.only(
-        bottom:
-            cardHeight * .018,
+        bottom: cardHeight * .018,
       ),
       child: Column(
         crossAxisAlignment:
-            CrossAxisAlignment
-                .start,
+            CrossAxisAlignment.start,
         children: [
           Text(
             label,
@@ -2287,19 +1746,15 @@ class _HomeScreenState extends State<HomeScreen> {
           SizedBox(
             width: double.infinity,
             child: FittedBox(
-              fit:
-                  BoxFit.scaleDown,
-              alignment:
-                  Alignment.centerLeft,
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
               child: Text(
                 value,
                 maxLines: 1,
                 softWrap: false,
                 style: TextStyle(
                   color:
-                      const Color(
-                    0xff111111,
-                  ),
+                      const Color(0xff111111),
                   fontSize: valueSize,
                   height: 1.1,
                   fontWeight:
@@ -2313,6 +1768,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ============================================================
+  // BACK RULE
+  // ============================================================
+
   Widget _backRule(
     String text,
     double cardHeight,
@@ -2322,11 +1781,9 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Text(
         text,
         maxLines: 1,
-        overflow:
-            TextOverflow.ellipsis,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
-          color:
-              const Color(0xff101010),
+          color: const Color(0xff101010),
           fontSize:
               (cardHeight * .030)
                   .clamp(5.5, 9.5),
@@ -2338,19 +1795,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ============================================================
+  // SOCIAL CIRCLE
+  // ============================================================
+
   Widget _socialCircle(
     IconData icon,
   ) {
     return Container(
       width: 18,
       height: 18,
-      decoration:
-          const BoxDecoration(
+      decoration: const BoxDecoration(
         color: Color(0xff181818),
         shape: BoxShape.circle,
       ),
-      alignment:
-          Alignment.center,
+      alignment: Alignment.center,
       child: Icon(
         icon,
         color: Colors.white,
@@ -2360,7 +1819,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ============================================================
-  // BARCODE
+  // MEMBERSHIP BARCODE
   // ============================================================
 
   Widget _membershipBarcode(
@@ -2368,19 +1827,15 @@ class _HomeScreenState extends State<HomeScreen> {
     bool showText = true,
     bool border = false,
   }) {
-    final barcode =
-        BarcodeWidget(
-      barcode:
-          Barcode.code128(),
+    final barcode = BarcodeWidget(
+      barcode: Barcode.code128(),
       data: membership.isEmpty
           ? '000000000000'
           : membership,
       drawText: showText,
-      style:
-          const TextStyle(
+      style: const TextStyle(
         fontSize: 8,
-        fontWeight:
-            FontWeight.w700,
+        fontWeight: FontWeight.w700,
         color: Colors.black,
       ),
       errorBuilder:
@@ -2388,12 +1843,10 @@ class _HomeScreenState extends State<HomeScreen> {
         return Center(
           child: Text(
             membership,
-            style:
-                const TextStyle(
+            style: const TextStyle(
               fontSize: 9,
               color: Colors.black,
-              fontWeight:
-                  FontWeight.bold,
+              fontWeight: FontWeight.bold,
             ),
           ),
         );
@@ -2412,13 +1865,10 @@ class _HomeScreenState extends State<HomeScreen> {
         5,
         3,
       ),
-      decoration:
-          BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        border:
-            Border.all(
-          color:
-              const Color(0xff8994a8),
+        border: Border.all(
+          color: const Color(0xff8994a8),
           width: 1.2,
         ),
         borderRadius:
@@ -2426,8 +1876,7 @@ class _HomeScreenState extends State<HomeScreen> {
         boxShadow: [
           BoxShadow(
             color:
-                Colors.black
-                    .withValues(
+                Colors.black.withValues(
               alpha: .14,
             ),
             blurRadius: 7,
@@ -2450,86 +1899,74 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Card(
       elevation: 0,
-      shape:
-          RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius:
             BorderRadius.circular(16),
-        side:
-            const BorderSide(
-          color:
-              Color(0xffe8ebf2),
+        side: const BorderSide(
+          color: Color(0xffe8ebf2),
         ),
       ),
       child: Padding(
-        padding:
-            const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment:
-              CrossAxisAlignment
-                  .start,
+              CrossAxisAlignment.start,
           children: [
             const Text(
               'Membership Barcode',
-              style:
-                  TextStyle(
+              style: TextStyle(
                 color: darkText,
                 fontSize: 17,
-                fontWeight:
-                    FontWeight.w800,
+                fontWeight: FontWeight.w800,
               ),
             ),
+
             const SizedBox(height: 5),
+
             const Text(
               'Show this barcode when your membership '
               'needs to be verified.',
-              style:
-                  TextStyle(
+              style: TextStyle(
                 color: mutedText,
                 fontSize: 12,
                 height: 1.4,
               ),
             ),
+
             const SizedBox(height: 15),
+
             Container(
               width: double.infinity,
               height: 105,
               padding:
-                  const EdgeInsets
-                      .symmetric(
+                  const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 10,
               ),
-              decoration:
-                  BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius:
-                    BorderRadius.circular(
-                  10,
-                ),
-                border:
-                    Border.all(
+                    BorderRadius.circular(10),
+                border: Border.all(
                   color:
-                      const Color(
-                    0xffdfe4ee,
-                  ),
+                      const Color(0xffdfe4ee),
                 ),
               ),
-              child:
-                  _membershipBarcode(
+              child: _membershipBarcode(
                 membership,
                 showText: true,
               ),
             ),
+
             const SizedBox(height: 8),
+
             Center(
               child: Text(
                 membership,
-                style:
-                    const TextStyle(
+                style: const TextStyle(
                   color: darkText,
                   fontSize: 12,
-                  fontWeight:
-                      FontWeight.w800,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: 1,
                 ),
               ),
@@ -2555,18 +1992,15 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Expanded(
               child: _statCard(
-                title:
-                    'Available Points',
+                title: 'Available Points',
                 value: '$points',
-                subtitle:
-                    'Member points',
+                subtitle: 'Member points',
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _statCard(
-                title:
-                    'Total Purchase',
+                title: 'Total Purchase',
                 value:
                     'RM ${totalSpend.toStringAsFixed(2)}',
                 subtitle:
@@ -2578,14 +2012,16 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 10),
         _statCard(
           title: 'Transactions',
-          value:
-              '$transactionCount',
-          subtitle:
-              'Purchase records',
+          value: '$transactionCount',
+          subtitle: 'Purchase records',
         ),
       ],
     );
   }
+
+  // ============================================================
+  // STAT CARD
+  // ============================================================
 
   Widget _statCard({
     required String title,
@@ -2595,15 +2031,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding:
           const EdgeInsets.all(18),
-      decoration:
-          BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
         borderRadius:
             BorderRadius.circular(16),
-        border:
-            Border.all(
-          color:
-              const Color(0xffe8ebf2),
+        border: Border.all(
+          color: const Color(0xffe8ebf2),
         ),
       ),
       child: Column(
@@ -2612,10 +2045,8 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Text(
             title,
-            style:
-                const TextStyle(
-              color:
-                  Color(0xff788398),
+            style: const TextStyle(
+              color: Color(0xff788398),
               fontSize: 12,
             ),
           ),
@@ -2625,21 +2056,17 @@ class _HomeScreenState extends State<HomeScreen> {
             maxLines: 1,
             overflow:
                 TextOverflow.ellipsis,
-            style:
-                const TextStyle(
+            style: const TextStyle(
               color: darkText,
               fontSize: 22,
-              fontWeight:
-                  FontWeight.w900,
+              fontWeight: FontWeight.w900,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style:
-                const TextStyle(
-              color:
-                  Color(0xff8b94a6),
+            style: const TextStyle(
+              color: Color(0xff8b94a6),
               fontSize: 11,
             ),
           ),
@@ -2664,36 +2091,28 @@ class _HomeScreenState extends State<HomeScreen> {
           const EdgeInsets.only(
         bottom: 10,
       ),
-      shape:
-          RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius:
             BorderRadius.circular(16),
-        side:
-            const BorderSide(
-          color:
-              Color(0xffe8ebf2),
+        side: const BorderSide(
+          color: Color(0xffe8ebf2),
         ),
       ),
       child: ListTile(
         contentPadding:
-            const EdgeInsets
-                .symmetric(
+            const EdgeInsets.symmetric(
           horizontal: 15,
           vertical: 5,
         ),
         leading: Container(
           width: 44,
           height: 44,
-          decoration:
-              BoxDecoration(
-            color:
-                blue.withValues(
+          decoration: BoxDecoration(
+            color: blue.withValues(
               alpha: .08,
             ),
             borderRadius:
-                BorderRadius.circular(
-              12,
-            ),
+                BorderRadius.circular(12),
           ),
           child: Icon(
             icon,
@@ -2702,28 +2121,339 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         title: Text(
           title,
-          style:
-              const TextStyle(
+          style: const TextStyle(
             color: darkText,
-            fontWeight:
-                FontWeight.w800,
+            fontWeight: FontWeight.w800,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style:
-              const TextStyle(
+          style: const TextStyle(
             color: mutedText,
             fontSize: 12,
           ),
         ),
-        trailing:
-            const Icon(
+        trailing: const Icon(
           Icons.chevron_right,
-          color:
-              Color(0xff687386),
+          color: Color(0xff687386),
         ),
         onTap: onTap,
+      ),
+    );
+  }
+
+  // ============================================================
+  // PURCHASE HISTORY
+  // ============================================================
+
+  Widget _buildPurchasesPage() {
+    // Automatically load purchases when page opens.
+    if (!purchasesLoading &&
+        purchaseHistory.isEmpty &&
+        purchasesError == null) {
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) {
+        if (mounted) {
+          _loadPurchaseHistory();
+        }
+      });
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadPurchaseHistory,
+      child: ListView(
+        physics:
+            const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          22,
+          16,
+          40,
+        ),
+        children: [
+          _pageHeading(
+            eyebrow: 'MEMBER ACTIVITY',
+            title: 'Purchase History',
+            description:
+                'Your Hasani Books purchase records.',
+          ),
+
+          if (purchasesLoading)
+            const Padding(
+              padding:
+                  EdgeInsets.symmetric(
+                vertical: 50,
+              ),
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: blue,
+                ),
+              ),
+            ),
+
+          if (!purchasesLoading &&
+              purchasesError != null)
+            Container(
+              width: double.infinity,
+              padding:
+                  const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color:
+                    Colors.red.withValues(
+                  alpha: .06,
+                ),
+                borderRadius:
+                    BorderRadius.circular(16),
+                border: Border.all(
+                  color:
+                      Colors.red.withValues(
+                    alpha: .18,
+                  ),
+                ),
+              ),
+              child: Column(
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    color: Colors.red,
+                    size: 38,
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  const Text(
+                    'Unable to load purchase history',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: darkText,
+                      fontSize: 17,
+                      fontWeight:
+                          FontWeight.w800,
+                    ),
+                  ),
+
+                  const SizedBox(height: 7),
+
+                  Text(
+                    purchasesError!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: mutedText,
+                      fontSize: 12,
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  OutlinedButton.icon(
+                    onPressed:
+                        _loadPurchaseHistory,
+                    icon: const Icon(
+                      Icons.refresh,
+                    ),
+                    label:
+                        const Text(
+                      'Try Again',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          if (!purchasesLoading &&
+              purchasesError == null &&
+              purchaseHistory.isEmpty)
+            _emptyFeature(
+              icon:
+                  Icons.receipt_long_outlined,
+              title: 'No purchases found',
+              description:
+                  'There are no purchase records available for this membership.',
+            ),
+
+          if (!purchasesLoading &&
+              purchaseHistory.isNotEmpty)
+            ...purchaseHistory.map(
+              (purchase) {
+                if (purchase is! Map) {
+                  return const SizedBox.shrink();
+                }
+
+                final p =
+                    Map<String, dynamic>.from(
+                  purchase,
+                );
+
+                final receiptNo =
+                    _firstValue([
+                          p['receiptNo'],
+                          p['receipt'],
+                          p['receiptNumber'],
+                          p['invoiceNo'],
+                          p['invoice'],
+                          p['transactionNo'],
+                          p['transactionNumber'],
+                        ]) ??
+                        '-';
+
+                final date =
+                    _firstValue([
+                          p['date'],
+                          p['transactionDate'],
+                          p['purchaseDate'],
+                          p['createdAt'],
+                          p['datetime'],
+                        ]) ??
+                        '-';
+
+                final total =
+                    _doubleValue(
+                  p['total'] ??
+                      p['amount'] ??
+                      p['grandTotal'] ??
+                      p['netTotal'],
+                );
+
+                final points =
+                    _numberValue(
+                  p['points'] ??
+                      p['pointsEarned'] ??
+                      p['earnedPoints'],
+                );
+
+                return Card(
+                  elevation: 0,
+                  margin:
+                      const EdgeInsets.only(
+                    bottom: 12,
+                  ),
+                  shape:
+                      RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(
+                      16,
+                    ),
+                    side:
+                        const BorderSide(
+                      color:
+                          Color(0xffe8ebf2),
+                    ),
+                  ),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.all(
+                      16,
+                    ),
+                    child: Row(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration:
+                              BoxDecoration(
+                            color:
+                                blue.withValues(
+                              alpha: .08,
+                            ),
+                            borderRadius:
+                                BorderRadius.circular(
+                              13,
+                            ),
+                          ),
+                          child:
+                              const Icon(
+                            Icons.receipt_long,
+                            color: blue,
+                          ),
+                        ),
+
+                        const SizedBox(
+                          width: 13,
+                        ),
+
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment
+                                    .start,
+                            children: [
+                              Text(
+                                'Receipt #$receiptNo',
+                                maxLines: 1,
+                                overflow:
+                                    TextOverflow
+                                        .ellipsis,
+                                style:
+                                    const TextStyle(
+                                  color:
+                                      darkText,
+                                  fontSize: 15,
+                                  fontWeight:
+                                      FontWeight
+                                          .w800,
+                                ),
+                              ),
+
+                              const SizedBox(
+                                height: 6,
+                              ),
+
+                              Text(
+                                date,
+                                maxLines: 2,
+                                overflow:
+                                    TextOverflow
+                                        .ellipsis,
+                                style:
+                                    const TextStyle(
+                                  color:
+                                      mutedText,
+                                  fontSize: 12,
+                                ),
+                              ),
+
+                              const SizedBox(
+                                height: 5,
+                              ),
+
+                              Text(
+                                '$points points',
+                                style:
+                                    const TextStyle(
+                                  color: blue,
+                                  fontSize: 12,
+                                  fontWeight:
+                                      FontWeight
+                                          .w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(
+                          width: 8,
+                        ),
+
+                        Text(
+                          'RM ${total.toStringAsFixed(2)}',
+                          style:
+                              const TextStyle(
+                            color: darkText,
+                            fontSize: 15,
+                            fontWeight:
+                                FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
       ),
     );
   }
@@ -2734,14 +2464,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPointsPage() {
     final points =
-        _numberValue(
-      customer?['points'],
-    );
+        _numberValue(customer?['points']);
 
     final purchases =
-        dashboard?['purchases']
-                as List? ??
-            [];
+        dashboard?['purchases'] as List? ?? [];
 
     double spend = 0;
 
@@ -2749,19 +2475,18 @@ class _HomeScreenState extends State<HomeScreen> {
       if (item is Map) {
         spend +=
             _doubleValue(
-          item['total'] ??
-              item['amount'],
-        );
+              item['total'] ??
+                  item['amount'] ??
+                  item['grandTotal'],
+            );
       }
     }
 
     return _pageScroll(
       children: [
         _pageHeading(
-          eyebrow:
-              'MEMBERSHIP BENEFITS',
-          title:
-              'Member Points',
+          eyebrow: 'MEMBERSHIP BENEFITS',
+          title: 'Member Points',
           description:
               'Your available Hasani Books member points.',
         ),
@@ -2770,20 +2495,15 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Expanded(
               child: _statCard(
-                title:
-                    'Available Points',
-                value:
-                    '$points',
-                subtitle:
-                    'Current balance',
+                title: 'Available Points',
+                value: '$points',
+                subtitle: 'Current balance',
               ),
             ),
-            const SizedBox(
-                width: 12),
+            const SizedBox(width: 12),
             Expanded(
               child: _statCard(
-                title:
-                    'Purchase Value',
+                title: 'Purchase Value',
                 value:
                     'RM ${spend.toStringAsFixed(2)}',
                 subtitle:
@@ -2793,18 +2513,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
 
-        const SizedBox(
-            height: 18),
+        const SizedBox(height: 18),
 
         _simpleInformationCard(
-          icon:
-              Icons.stars_outlined,
-          title:
-              'Points Earned',
+          icon: Icons.stars_outlined,
+          title: 'Points Earned',
           description:
               'Points are calculated from your recorded purchases.',
-          value:
-              '$points points',
+          value: '$points points',
         ),
       ],
     );
@@ -2815,23 +2531,18 @@ class _HomeScreenState extends State<HomeScreen> {
   // ============================================================
 
   Widget _buildPersonalPage() {
-    final data =
-        customer ?? {};
+    final data = customer ?? {};
 
     final fields =
         <Map<String, String>>[
       {
         'label': 'Full Name',
         'value':
-            data['name']
-                    ?.toString() ??
-                '—',
+            data['name']?.toString() ?? '—',
       },
       {
-        'label':
-            'Membership Card',
-        'value':
-            _membershipNumber(),
+        'label': 'Membership Card',
+        'value': _membershipNumber(),
       },
       {
         'label': 'Points',
@@ -2839,8 +2550,7 @@ class _HomeScreenState extends State<HomeScreen> {
             '${_numberValue(data['points'])}',
       },
       {
-        'label':
-            'Expiry Date',
+        'label': 'Expiry Date',
         'value':
             _firstValue([
                   data['expiry'],
@@ -2850,8 +2560,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 '—',
       },
       {
-        'label':
-            'Issue Branch',
+        'label': 'Issue Branch',
         'value':
             _firstValue([
                   data['issueBranch'],
@@ -2893,10 +2602,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return _pageScroll(
       children: [
         _pageHeading(
-          eyebrow:
-              'HASANI MEMBER',
-          title:
-              'Personal Information',
+          eyebrow: 'HASANI MEMBER',
+          title: 'Personal Information',
           description:
               'Member information returned from the customer account.',
         ),
@@ -2909,40 +2616,29 @@ class _HomeScreenState extends State<HomeScreen> {
               bottom: 10,
             ),
             padding:
-                const EdgeInsets.all(
-              17,
-            ),
-            decoration:
-                BoxDecoration(
+                const EdgeInsets.all(17),
+            decoration: BoxDecoration(
               color: Colors.white,
               borderRadius:
-                  BorderRadius.circular(
-                16,
-              ),
-              border:
-                  Border.all(
+                  BorderRadius.circular(16),
+              border: Border.all(
                 color:
-                    const Color(
-                  0xffe8ebf2,
-                ),
+                    const Color(0xffe8ebf2),
               ),
             ),
             child: Column(
               crossAxisAlignment:
-                  CrossAxisAlignment
-                      .start,
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   field['label']!,
                   style:
                       const TextStyle(
-                    color:
-                        Color(0xff788398),
+                    color: Color(0xff788398),
                     fontSize: 12,
                   ),
                 ),
-                const SizedBox(
-                    height: 5),
+                const SizedBox(height: 5),
                 Text(
                   field['value']!,
                   style:
@@ -2967,15 +2663,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildRewardsPage() {
     return _featurePage(
-      eyebrow:
-          'MEMBERSHIP BENEFITS',
+      eyebrow: 'MEMBERSHIP BENEFITS',
       title: 'Rewards',
       description:
           'Rewards available for your membership.',
       icon:
           Icons.card_giftcard_outlined,
-      featureTitle:
-          'Member Rewards',
+      featureTitle: 'Member Rewards',
       featureDescription:
           'Your Hasani Books membership rewards will appear here.',
     );
@@ -2987,8 +2681,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildOffersPage() {
     return _featurePage(
-      eyebrow:
-          'SPECIAL OFFERS',
+      eyebrow: 'SPECIAL OFFERS',
       title: 'Offers',
       description:
           'Member offers and promotions.',
@@ -3007,10 +2700,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildStorePage() {
     return _featurePage(
-      eyebrow:
-          'SHOP ONLINE',
-      title:
-          'Online Store',
+      eyebrow: 'SHOP ONLINE',
+      title: 'Online Store',
       description:
           'Hasani Books online store.',
       icon:
@@ -3060,6 +2751,7 @@ class _HomeScreenState extends State<HomeScreen> {
           title: title,
           description: description,
         ),
+
         _emptyFeature(
           icon: icon,
           title: featureTitle,
@@ -3071,7 +2763,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ============================================================
-  // PAGE HELPERS
+  // PAGE SCROLL
   // ============================================================
 
   Widget _pageScroll({
@@ -3080,8 +2772,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return SingleChildScrollView(
       physics:
           const AlwaysScrollableScrollPhysics(),
-      padding:
-          const EdgeInsets.fromLTRB(
+      padding: const EdgeInsets.fromLTRB(
         16,
         22,
         16,
@@ -3094,6 +2785,10 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  // ============================================================
+  // PAGE HEADING
+  // ============================================================
 
   Widget _pageHeading({
     required String eyebrow,
@@ -3111,32 +2806,30 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Text(
             eyebrow,
-            style:
-                const TextStyle(
-              color:
-                  Color(0xff7c879c),
+            style: const TextStyle(
+              color: Color(0xff7c879c),
               fontSize: 11,
               letterSpacing: 1.4,
-              fontWeight:
-                  FontWeight.w800,
+              fontWeight: FontWeight.w800,
             ),
           ),
+
           const SizedBox(height: 5),
+
           Text(
             title,
-            style:
-                const TextStyle(
+            style: const TextStyle(
               color: darkText,
               fontSize: 29,
-              fontWeight:
-                  FontWeight.w900,
+              fontWeight: FontWeight.w900,
             ),
           ),
+
           const SizedBox(height: 5),
+
           Text(
             description,
-            style:
-                const TextStyle(
+            style: const TextStyle(
               color: mutedText,
               fontSize: 14,
             ),
@@ -3145,6 +2838,10 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  // ============================================================
+  // EMPTY FEATURE
+  // ============================================================
 
   Widget _emptyFeature({
     required IconData icon,
@@ -3158,17 +2855,12 @@ class _HomeScreenState extends State<HomeScreen> {
         horizontal: 24,
         vertical: 40,
       ),
-      decoration:
-          BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
         borderRadius:
-            BorderRadius.circular(
-          18,
-        ),
-        border:
-            Border.all(
-          color:
-              const Color(0xffe8ebf2),
+            BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xffe8ebf2),
         ),
       ),
       child: Column(
@@ -3176,12 +2868,9 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             width: 72,
             height: 72,
-            decoration:
-                BoxDecoration(
+            decoration: BoxDecoration(
               color:
-                  blue.withValues(
-                alpha: .08,
-              ),
+                  blue.withValues(alpha: .08),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -3190,28 +2879,25 @@ class _HomeScreenState extends State<HomeScreen> {
               size: 36,
             ),
           ),
-          const SizedBox(
-              height: 18),
+
+          const SizedBox(height: 18),
+
           Text(
             title,
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
+            textAlign: TextAlign.center,
+            style: const TextStyle(
               color: darkText,
               fontSize: 20,
-              fontWeight:
-                  FontWeight.w900,
+              fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(
-              height: 8),
+
+          const SizedBox(height: 8),
+
           Text(
             description,
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
+            textAlign: TextAlign.center,
+            style: const TextStyle(
               color: mutedText,
               fontSize: 13,
               height: 1.5,
@@ -3221,6 +2907,10 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  // ============================================================
+  // SIMPLE INFORMATION CARD
+  // ============================================================
 
   Widget _simpleInformationCard({
     required IconData icon,
@@ -3232,17 +2922,12 @@ class _HomeScreenState extends State<HomeScreen> {
       width: double.infinity,
       padding:
           const EdgeInsets.all(20),
-      decoration:
-          BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
         borderRadius:
-            BorderRadius.circular(
-          18,
-        ),
-        border:
-            Border.all(
-          color:
-              const Color(0xffe8ebf2),
+            BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xffe8ebf2),
         ),
       ),
       child: Row(
@@ -3250,16 +2935,11 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             width: 54,
             height: 54,
-            decoration:
-                BoxDecoration(
+            decoration: BoxDecoration(
               color:
-                  blue.withValues(
-                alpha: .08,
-              ),
+                  blue.withValues(alpha: .08),
               borderRadius:
-                  BorderRadius.circular(
-                15,
-              ),
+                  BorderRadius.circular(15),
             ),
             child: Icon(
               icon,
@@ -3267,13 +2947,13 @@ class _HomeScreenState extends State<HomeScreen> {
               size: 28,
             ),
           ),
-          const SizedBox(
-              width: 14),
+
+          const SizedBox(width: 14),
+
           Expanded(
             child: Column(
               crossAxisAlignment:
-                  CrossAxisAlignment
-                      .start,
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
@@ -3285,8 +2965,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         FontWeight.w900,
                   ),
                 ),
-                const SizedBox(
-                    height: 4),
+
+                const SizedBox(height: 4),
+
                 Text(
                   description,
                   style:
@@ -3299,19 +2980,17 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          const SizedBox(
-              width: 10),
+
+          const SizedBox(width: 10),
+
           Flexible(
             child: Text(
               value,
-              textAlign:
-                  TextAlign.right,
-              style:
-                  const TextStyle(
+              textAlign: TextAlign.right,
+              style: const TextStyle(
                 color: blue,
                 fontSize: 16,
-                fontWeight:
-                    FontWeight.w900,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ),
@@ -3336,9 +3015,12 @@ class _HomeScreenState extends State<HomeScreen> {
         memberController.text.trim();
   }
 
+  // ============================================================
+  // INITIAL
+  // ============================================================
+
   String _initial(String name) {
-    final clean =
-        name.trim();
+    final clean = name.trim();
 
     if (clean.isEmpty) {
       return 'M';
@@ -3349,14 +3031,15 @@ class _HomeScreenState extends State<HomeScreen> {
         .toUpperCase();
   }
 
+  // ============================================================
+  // FIRST VALUE
+  // ============================================================
+
   String? _firstValue(
     List<dynamic> values,
   ) {
-    for (final value
-        in values) {
-      if (value == null) {
-        continue;
-      }
+    for (final value in values) {
+      if (value == null) continue;
 
       final text =
           value.toString().trim();
@@ -3370,30 +3053,32 @@ class _HomeScreenState extends State<HomeScreen> {
     return null;
   }
 
-  int _numberValue(
-    dynamic value,
-  ) {
+  // ============================================================
+  // NUMBER VALUE
+  // ============================================================
+
+  int _numberValue(dynamic value) {
     if (value is num) {
       return value.toInt();
     }
 
     return int.tryParse(
-          value?.toString() ??
-              '',
+          value?.toString() ?? '',
         ) ??
         0;
   }
 
-  double _doubleValue(
-    dynamic value,
-  ) {
+  // ============================================================
+  // DOUBLE VALUE
+  // ============================================================
+
+  double _doubleValue(dynamic value) {
     if (value is num) {
       return value.toDouble();
     }
 
     return double.tryParse(
-          value?.toString() ??
-              '',
+          value?.toString() ?? '',
         ) ??
         0;
   }
