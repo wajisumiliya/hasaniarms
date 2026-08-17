@@ -1196,15 +1196,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 
                 Positioned(
-  left: width * .05,
-  top: height * .035,
-  width: width * .67,
-  height: height * .237,
+  left: width * 0.05,
+  top: height * 0.035,
+  width: width * 0.67,
+  height: height * 0.237,
   child: Image.asset(
     logoAsset,
     fit: BoxFit.contain,
     alignment: Alignment.centerLeft,
-    errorBuilder: (_, __, ___) {
+    errorBuilder: (context, error, stackTrace) {
       return const Text(
         'hasani BOOKS',
         style: TextStyle(
