@@ -20,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
       TextEditingController(text: '000101020212');
 
   final TextEditingController passwordController =
-      TextEditingController(text: '123123');
+      TextEditingController();
 
   Map<String, dynamic>? customer;
   Map<String, dynamic>? dashboard;
@@ -29,6 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool loading = false;
   bool obscurePassword = true;
+
+  // Hasani Books logo currently stored in your web assets.
+  static const String logoUrl =
+      'https://raw.githubusercontent.com/wajisumiliya/hasaniarms/main/web/assets/hasani-books-logo.jpg';
 
   @override
   void dispose() {
@@ -59,7 +63,9 @@ class _HomeScreenState extends State<HomeScreen> {
       final customerData = response['customer'];
 
       if (customerData is! Map) {
-        throw Exception('Customer information was not returned.');
+        throw Exception(
+          'Customer information was not returned.',
+        );
       }
 
       final dashboardData =
@@ -68,7 +74,10 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
 
       setState(() {
-        customer = Map<String, dynamic>.from(customerData);
+        customer = Map<String, dynamic>.from(
+          customerData,
+        );
+
         dashboard = dashboardData;
         errorMessage = null;
       });
@@ -106,6 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
       customer = null;
       dashboard = null;
       errorMessage = null;
+      passwordController.clear();
     });
   }
 
@@ -118,142 +128,294 @@ class _HomeScreenState extends State<HomeScreen> {
     return _buildDashboard();
   }
 
+  // ============================================================
+  // LOGIN SCREEN
+  // ============================================================
+
   Widget _buildLoginScreen() {
+    final theme = Theme.of(context);
+
     return Scaffold(
+      backgroundColor: const Color(0xfff5f7fb),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 460,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              keyboardDismissBehavior:
+                  ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 28,
               ),
-              child: Card(
-                elevation: 5,
-                margin: EdgeInsets.zero,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    28,
-                    30,
-                    28,
-                    28,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildLogo(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight - 56,
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: 460,
+                    ),
+                    child: Column(
+                      mainAxisAlignment:
+                          MainAxisAlignment.center,
+                      children: [
+                        // ------------------------------------------------
+                        // LOGO
+                        // ------------------------------------------------
 
-                      const SizedBox(height: 22),
+                        _buildLoginLogo(),
 
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Hasani Customer',
-                          style: TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
+                        const SizedBox(height: 24),
 
-                      const SizedBox(height: 6),
+                        // ------------------------------------------------
+                        // EYEBROW
+                        // ------------------------------------------------
 
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Member Login',
-                          style: TextStyle(
-                            fontSize: 20,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 28),
-
-                      TextField(
-                        controller: memberController,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(
-                          labelText: 'Membership Card Number',
-                          prefixIcon: Icon(
-                            Icons.badge_outlined,
-                          ),
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      TextField(
-                        controller: passwordController,
-                        obscureText: obscurePassword,
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => login(),
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon: const Icon(
-                            Icons.lock_outline,
-                          ),
-                          suffixIcon: IconButton(
-                            onPressed: () {
-                              setState(() {
-                                obscurePassword =
-                                    !obscurePassword;
-                              });
-                            },
-                            icon: Icon(
-                              obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons
-                                      .visibility_off_outlined,
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'CUSTOMER PORTAL',
+                            style: TextStyle(
+                              color: Color(0xff2358d8),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.5,
                             ),
                           ),
-                          border: const OutlineInputBorder(),
                         ),
-                      ),
 
-                      const SizedBox(height: 20),
+                        const SizedBox(height: 8),
 
-                      SizedBox(
-                        width: double.infinity,
-                        height: 54,
-                        child: FilledButton(
-                          onPressed: loading ? null : login,
-                          child: loading
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child:
-                                      CircularProgressIndicator(
-                                    strokeWidth: 2.5,
-                                  ),
-                                )
-                              : const Text(
-                                  'Login',
-                                  style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight:
-                                        FontWeight.bold,
+                        // ------------------------------------------------
+                        // TITLE
+                        // ------------------------------------------------
+
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Member Login',
+                            style: TextStyle(
+                              color: Color(0xff172033),
+                              fontSize: 32,
+                              height: 1.15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        // ------------------------------------------------
+                        // DESCRIPTION
+                        // ------------------------------------------------
+
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Sign in to view your Hasani Books '
+                            'membership, points and purchase history.',
+                            style: TextStyle(
+                              color: Color(0xff667085),
+                              fontSize: 14,
+                              height: 1.55,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 26),
+
+                        // ------------------------------------------------
+                        // LOGIN CARD
+                        // ------------------------------------------------
+
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(22),
+                            child: Column(
+                              children: [
+                                // Membership number
+                                const Align(
+                                  alignment:
+                                      Alignment.centerLeft,
+                                  child: Text(
+                                    'Membership Card No.',
+                                    style: TextStyle(
+                                      color:
+                                          Color(0xff172033),
+                                      fontSize: 13,
+                                      fontWeight:
+                                          FontWeight.w700,
+                                    ),
                                   ),
                                 ),
-                        ),
-                      ),
 
-                      if (errorMessage != null) ...[
-                        const SizedBox(height: 16),
+                                const SizedBox(height: 8),
+
+                                TextField(
+                                  controller:
+                                      memberController,
+                                  keyboardType:
+                                      TextInputType.number,
+                                  textInputAction:
+                                      TextInputAction.next,
+                                  decoration:
+                                      const InputDecoration(
+                                    hintText:
+                                        'Enter membership card number',
+                                    prefixIcon: Icon(
+                                      Icons.badge_outlined,
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 18),
+
+                                // Password
+                                const Align(
+                                  alignment:
+                                      Alignment.centerLeft,
+                                  child: Text(
+                                    'Password',
+                                    style: TextStyle(
+                                      color:
+                                          Color(0xff172033),
+                                      fontSize: 13,
+                                      fontWeight:
+                                          FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 8),
+
+                                TextField(
+                                  controller:
+                                      passwordController,
+                                  obscureText:
+                                      obscurePassword,
+                                  textInputAction:
+                                      TextInputAction.done,
+                                  onSubmitted: (_) {
+                                    if (!loading) {
+                                      login();
+                                    }
+                                  },
+                                  decoration:
+                                      InputDecoration(
+                                    hintText:
+                                        'Enter your password',
+                                    prefixIcon:
+                                        const Icon(
+                                      Icons.lock_outline,
+                                    ),
+                                    suffixIcon:
+                                        IconButton(
+                                      tooltip:
+                                          obscurePassword
+                                              ? 'Show password'
+                                              : 'Hide password',
+                                      onPressed: () {
+                                        setState(() {
+                                          obscurePassword =
+                                              !obscurePassword;
+                                        });
+                                      },
+                                      icon: Icon(
+                                        obscurePassword
+                                            ? Icons
+                                                .visibility_outlined
+                                            : Icons
+                                                .visibility_off_outlined,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 22),
+
+                                // ------------------------------------------------
+                                // LOGIN BUTTON
+                                // ------------------------------------------------
+
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 52,
+                                  child: FilledButton(
+                                    onPressed:
+                                        loading
+                                            ? null
+                                            : login,
+                                    child: AnimatedSwitcher(
+                                      duration:
+                                          const Duration(
+                                        milliseconds: 180,
+                                      ),
+                                      child: loading
+                                          ? const SizedBox(
+                                              key: ValueKey(
+                                                'loading',
+                                              ),
+                                              width: 23,
+                                              height: 23,
+                                              child:
+                                                  CircularProgressIndicator(
+                                                strokeWidth:
+                                                    2.5,
+                                                color:
+                                                    Colors.white,
+                                              ),
+                                            )
+                                          : const Text(
+                                              'Login',
+                                              key: ValueKey(
+                                                'login',
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                ),
+
+                                // ------------------------------------------------
+                                // ERROR MESSAGE
+                                // ------------------------------------------------
+
+                                if (errorMessage != null) ...[
+                                  const SizedBox(
+                                    height: 16,
+                                  ),
+                                  _buildLoginError(),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // ------------------------------------------------
+                        // TEST ACCOUNT NOTE
+                        // ------------------------------------------------
+
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(14),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
-                            color: Colors.red.withValues(
-                              alpha: 0.08,
+                            color: const Color(
+                              0xff2358d8,
+                            ).withValues(
+                              alpha: 0.06,
                             ),
                             borderRadius:
                                 BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.red.withValues(
-                                alpha: 0.2,
+                              color: const Color(
+                                0xff2358d8,
+                              ).withValues(
+                                alpha: 0.12,
                               ),
                             ),
                           ),
@@ -262,89 +424,171 @@ class _HomeScreenState extends State<HomeScreen> {
                                 CrossAxisAlignment.start,
                             children: [
                               const Icon(
-                                Icons.error_outline,
-                                color: Colors.red,
+                                Icons.info_outline,
+                                color: Color(0xff2358d8),
+                                size: 19,
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 9),
                               Expanded(
                                 child: Text(
-                                  errorMessage!,
-                                  style: const TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 14,
+                                  'For testing, use your existing '
+                                  'test membership and password.',
+                                  style: TextStyle(
+                                    color: theme
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(
+                                          alpha: 0.7,
+                                        ),
+                                    fontSize: 12,
+                                    height: 1.4,
                                   ),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
 
-                      const SizedBox(height: 18),
+                        const SizedBox(height: 24),
 
-                      const Text(
-                        'Initial test password: 123123',
-                        style: TextStyle(
-                          color: Colors.grey,
+                        const Text(
+                          'HASANI BOOKS',
+                          style: TextStyle(
+                            color: Color(0xff98a2b3),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.5,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildLogo() {
+  // ============================================================
+  // LOGIN LOGO
+  // ============================================================
+
+  Widget _buildLoginLogo() {
     return Container(
-      width: 96,
-      height: 96,
+      width: 108,
+      height: 108,
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xff2358d8),
-            Color(0xff153b99),
-          ],
+        border: Border.all(
+          color: const Color(0xffe4e7ec),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black26,
-            blurRadius: 12,
-            offset: Offset(0, 6),
+            color: Colors.black.withValues(
+              alpha: 0.07,
+            ),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.shopping_bag_rounded,
-              color: Colors.white,
-              size: 42,
-            ),
-            SizedBox(height: 2),
-            Text(
-              'HASANI',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.5,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(17),
+        child: Image.network(
+          logoUrl,
+          fit: BoxFit.cover,
+          errorBuilder:
+              (context, error, stackTrace) {
+            return Container(
+              color: const Color(0xff2358d8),
+              alignment: Alignment.center,
+              child: const Text(
+                'HASANI\nBOOKS',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  height: 1.1,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.8,
+                ),
               ),
-            ),
-          ],
+            );
+          },
+          loadingBuilder:
+              (context, child, progress) {
+            if (progress == null) {
+              return child;
+            }
+
+            return const Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xff2358d8),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
+
+  // ============================================================
+  // LOGIN ERROR
+  // ============================================================
+
+  Widget _buildLoginError() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.red.withValues(
+          alpha: 0.06,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.red.withValues(
+            alpha: 0.18,
+          ),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.error_outline,
+            color: Colors.red,
+            size: 21,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              errorMessage!,
+              style: const TextStyle(
+                color: Colors.red,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // DASHBOARD
+  // ============================================================
 
   Widget _buildDashboard() {
     final purchases =
@@ -399,7 +643,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-
             ListTile(
               leading: const Icon(
                 Icons.dashboard_outlined,
@@ -411,7 +654,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pop(context);
               },
             ),
-
             ListTile(
               leading: const Icon(
                 Icons.receipt_long_outlined,
@@ -421,14 +663,12 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               onTap: () {
                 Navigator.pop(context);
-
                 _showPurchases(
                   context,
                   purchases,
                 );
               },
             ),
-
             ListTile(
               leading: const Icon(
                 Icons.stars_outlined,
@@ -438,7 +678,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               onTap: () {
                 Navigator.pop(context);
-
                 _showPoints(
                   context,
                   points,
@@ -446,7 +685,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-
             const ListTile(
               leading: Icon(
                 Icons.card_giftcard_outlined,
@@ -455,7 +693,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 'Rewards',
               ),
             ),
-
             const ListTile(
               leading: Icon(
                 Icons.local_offer_outlined,
@@ -464,7 +701,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 'Offers',
               ),
             ),
-
             const ListTile(
               leading: Icon(
                 Icons.shopping_cart_outlined,
@@ -473,7 +709,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 'Online Store',
               ),
             ),
-
             const ListTile(
               leading: Icon(
                 Icons.location_on_outlined,
@@ -482,9 +717,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 'Locations',
               ),
             ),
-
             const Divider(),
-
             ListTile(
               leading: const Icon(
                 Icons.logout,
@@ -509,15 +742,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontWeight: FontWeight.w800,
               ),
             ),
-
             const SizedBox(height: 18),
-
             _memberCard(
               customer!,
             ),
-
             const SizedBox(height: 14),
-
             Row(
               crossAxisAlignment:
                   CrossAxisAlignment.start,
@@ -544,9 +773,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-
             const SizedBox(height: 22),
-
             _section(
               'Quick Access',
               [
@@ -559,7 +786,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     purchases,
                   ),
                 ),
-
                 _tile(
                   Icons.stars_outlined,
                   'Member Points',
@@ -570,28 +796,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     totalSpend,
                   ),
                 ),
-
                 _tile(
                   Icons.card_giftcard_outlined,
                   'Rewards',
                   'Member rewards',
                   null,
                 ),
-
                 _tile(
                   Icons.local_offer_outlined,
                   'Offers',
                   'Special offers',
                   null,
                 ),
-
                 _tile(
                   Icons.shopping_cart_outlined,
                   'Online Store',
                   'Shop online',
                   null,
                 ),
-
                 _tile(
                   Icons.location_on_outlined,
                   'Locations',
@@ -610,14 +832,28 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       width: 52,
       height: 52,
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        color: const Color(0xff2358d8),
-      ),
-      child: const Icon(
-        Icons.shopping_bag_rounded,
         color: Colors.white,
-        size: 28,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xffe4e7ec),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(9),
+        child: Image.network(
+          logoUrl,
+          fit: BoxFit.cover,
+          errorBuilder:
+              (context, error, stackTrace) {
+            return const Icon(
+              Icons.menu_book_rounded,
+              color: Color(0xff2358d8),
+              size: 28,
+            );
+          },
+        ),
       ),
     );
   }
@@ -632,8 +868,19 @@ class _HomeScreenState extends State<HomeScreen> {
         data['membership']?.toString() ?? '';
 
     return Card(
+      clipBehavior: Clip.antiAlias,
       color: const Color(0xff2358d8),
-      child: Padding(
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xff2358d8),
+              Color(0xff153b99),
+            ],
+          ),
+        ),
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment:
@@ -643,13 +890,12 @@ class _HomeScreenState extends State<HomeScreen> {
               'HASANI MEMBER',
               style: TextStyle(
                 color: Colors.white70,
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.2,
               ),
             ),
-
             const SizedBox(height: 4),
-
             Text(
               name,
               style: const TextStyle(
@@ -658,16 +904,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             Text(
               membership,
               style: const TextStyle(
                 color: Colors.white70,
               ),
             ),
-
             const SizedBox(height: 18),
-
             Wrap(
               spacing: 14,
               runSpacing: 14,
@@ -683,7 +926,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     size: 90,
                   ),
                 ),
-
                 Container(
                   color: Colors.white,
                   padding: const EdgeInsets.all(7),
@@ -721,9 +963,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontSize: 12,
               ),
             ),
-
             const SizedBox(height: 5),
-
             Text(
               value,
               maxLines: 1,
@@ -754,9 +994,7 @@ class _HomeScreenState extends State<HomeScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-
         const SizedBox(height: 10),
-
         ...children,
       ],
     );
@@ -770,7 +1008,20 @@ class _HomeScreenState extends State<HomeScreen> {
   ) {
     return Card(
       child: ListTile(
-        leading: Icon(icon),
+        leading: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: const Color(0xff2358d8)
+                .withValues(alpha: 0.08),
+            borderRadius:
+                BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            color: const Color(0xff2358d8),
+          ),
+        ),
         title: Text(title),
         subtitle: Text(subtitle),
         trailing: const Icon(
@@ -802,9 +1053,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
                 if (purchases.isEmpty)
                   const Padding(
                     padding: EdgeInsets.all(20),
@@ -814,7 +1063,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-
                 ...purchases.map(
                   (purchase) {
                     final p =
@@ -826,7 +1074,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         _doubleValue(p['total']);
 
                     return ListTile(
-                      leading: const CircleAvatar(
+                      leading:
+                          const CircleAvatar(
                         child: Icon(
                           Icons.receipt_long,
                         ),
@@ -875,26 +1124,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 14),
-
                 Text(
                   'Current points: $points',
                 ),
-
                 const SizedBox(height: 6),
-
                 Text(
                   'Verified purchase value: '
                   'RM ${spend.toStringAsFixed(2)}',
                 ),
-
                 const SizedBox(height: 6),
-
                 Text(
                   'Points earned: $points',
                 ),
-
                 const SizedBox(height: 20),
               ],
             ),
