@@ -16,3 +16,6 @@ dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - web/assets/hasani-books-logo.jpg
