@@ -1195,42 +1195,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 // --------------------------------------------------
 
                 Positioned(
-                  left: width * .05,
-                  top: height * .035,
-                  width: width * .67,
-                  height: height * .237,
-                  child: Container(
-                    decoration:
-                        BoxDecoration(
-                      color:
-                          const Color(0xffe40707),
-                      borderRadius:
-                          BorderRadius.circular(2),
-                    ),
-                    clipBehavior:
-                        Clip.hardEdge,
-                    child: Image.asset(
-                      logoAsset,
-                      fit: BoxFit.contain,
-                      alignment:
-                          Alignment.centerLeft,
-                      errorBuilder:
-                          (_, __, ___) {
-                        return const Center(
-                          child: Text(
-                            'hasani BOOKS',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight:
-                                  FontWeight.w900,
-                              fontSize: 18,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
+                Positioned(
+  left: width * .05,
+  top: height * .035,
+  width: width * .67,
+  height: height * .237,
+  child: Image.asset(
+    logoAsset,
+    fit: BoxFit.contain,
+    alignment: Alignment.centerLeft,
+    errorBuilder: (_, __, ___) {
+      return const Text(
+        'hasani BOOKS',
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w900,
+          fontSize: 18,
+        ),
+      );
+    },
+  ),
+),
 
                 // --------------------------------------------------
                 // % WATERMARK
@@ -1658,7 +1643,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           fontSize:
                               height * .043,
                           fontWeight:
-                              FontWeight.w700,
+                              FontWeight.w200,
                           letterSpacing: .3,
                         ),
                       ),
@@ -1709,9 +1694,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextStyle(
                             color: Colors.white,
                             fontSize:
-                                height * .055,
+                                height * .050,
                             fontWeight:
-                                FontWeight.w900,
+                                FontWeight.w800,
                           ),
                         ),
                         Text(
@@ -1720,9 +1705,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextStyle(
                             color: Colors.white,
                             fontSize:
-                                height * .045,
+                                height * .040,
                             fontWeight:
-                                FontWeight.w900,
+                                FontWeight.w800,
                           ),
                         ),
                         Text(
@@ -1733,7 +1718,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             fontSize:
                                 height * .045,
                             fontWeight:
-                                FontWeight.w900,
+                                FontWeight.w800,
                           ),
                         ),
                       ],
